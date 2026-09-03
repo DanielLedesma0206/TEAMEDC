@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title> PC Builder </title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Iconos -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+</head>
+
+<body>
+
+    <!-- Fondo -->
+    <div class="background"></div>
+
+    <!-- Barra lateral -->
+    <aside class="sidebar">
+        <div class="dropdown">
+                <div class="profile">
+                    <button class="profile-icon">
+                        <div >
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                    </button>
+                </div>
+        <nav class="dropdown-options">
+                <h2>Estudiante</h2>
+                <span>Nivel 1</span>
+
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <span>Progreso general</span>
+                        <strong>25%</strong>
+                    </div>
+
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                </div>
+            
+
+            <!-- Menu -->
+            
+
+                <h3>MENÚ</h3>
+
+                <a href="#" class="menu-item active">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Perfil</span>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-trophy"></i>
+                    <span>Logros</span>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Historial</span>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-power-off"></i>
+                    <span>Salir</span>
+                </a>
+
+            </nav>
+        </div>
+        <!-- ACCESOS RÁPIDOS 
+            <div class="quick-access">
+
+                <h3>ACCESOS RÁPIDOS</h3>
+
+                <a href="#" class="quick-item">
+                    <i class="fa-solid fa-book-open"></i>
+
+                    <div>
+                        <strong>Biblioteca</strong>
+                        <small>Documentación y teoría</small>
+                    </div>
+                </a>
+
+                <a href="#" class="quick-item">
+                    <i class="fa-solid fa-microchip"></i>
+
+                    <div>
+                        <strong>Componentes</strong>
+                        <small>Explorar catálogo</small>
+                    </div>
+                </a>
+
+            </div>
+        -->
+    </aside>
+
+
+    <!-- Contenido principal -->
+    <main class="main">
+
+        <!-- Boton ayuda -->
+        <button class="help-button">
+            <i class="fa-regular fa-circle-question"></i>
+            Ayuda
+        </button>
+
+
+        <!-- Logo -->
+        <header class="header">
+
+            <div class="logo-container">
+
+                <div class="logo-icon">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+
+                <div>
+                    <h1>PC<span>Builder</span></h1>
+
+                    <p>
+                        
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="title-line">
+                <span></span>
+                <h2>SELECCIONA UN MODO PARA COMENZAR</h2>
+                <span></span>
+            </div>
+
+        </header>
+
+
+        <!-- Modos -->
+        <section class="modes">
+
+            <!-- Juego libre -->
+            <article
+                class="mode-card blue"
+                onclick="abrirModo('Juego Libre')"
+            >
+
+                <div class="mode-icon">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+
+                <div class="mode-image">
+                    <i class="fa-solid fa-computer"></i>
+                </div>
+
+                <div class="mode-content">
+
+                    <h3>JUEGO LIBRE</h3>
+
+                    <p>
+                        Ensambla tu propia PC
+                        sin restricciones.
+                    </p>
+
+                </div>
+
+                <button class="arrow">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </article>
+
+
+            <!-- Modo estudio -->
+            <article
+                class="mode-card green"
+                onclick="abrirModo('Modo Estudio')"
+            >
+
+                <div class="mode-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+
+                <div class="mode-image">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+
+                <div class="mode-content">
+
+                    <h3>MODO ESTUDIO</h3>
+
+                    <p>
+                        Aprende sobre arquitectura
+                        de computadoras de forma interactiva.
+                    </p>
+
+                </div>
+
+                <button class="arrow">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </article>
+
+
+            <!-- Prácticas -->
+            <article
+                class="mode-card purple"
+                onclick="abrirModo('Prácticas')"
+            >
+
+                <div class="mode-icon">
+                    <i class="fa-solid fa-flask"></i>
+                </div>
+
+                <div class="mode-image">
+                    <i class="fa-solid fa-memory"></i>
+                </div>
+
+                <div class="mode-content">
+
+                    <h3>PRÁCTICAS</h3>
+
+                    <p>
+                        Realiza actividades prácticas
+                        y refuerza tus conocimientos.
+                    </p>
+
+                </div>
+
+                <button class="arrow">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </article>
+
+
+            <!-- Evaluación -->
+            <article
+                class="mode-card orange"
+                onclick="abrirModo('Evaluación')"
+            >
+
+                <div class="mode-icon">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+
+                <div class="mode-image">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+
+                <div class="mode-content">
+
+                    <h3>EVALUACIÓN</h3>
+
+                    <p>
+                        Pon a prueba lo que has aprendido
+                        mediante cuestionarios.
+                    </p>
+
+                </div>
+
+                <button class="arrow">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </article>
+
+
+            <!-- Desafios -->
+            <article
+                class="mode-card red"
+                onclick="abrirModo('Desafíos')"
+            >
+
+                <div class="mode-icon">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+
+                <div class="mode-image">
+                    <i class="fa-solid fa-medal"></i>
+                </div>
+
+                <div class="mode-content">
+
+                    <h3>DESAFÍOS</h3>
+
+                    <p>
+                        Completa desafíos y consigue
+                        recompensas.
+                    </p>
+
+                </div>
+
+                <button class="arrow">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </article>
+
+
+            <!-- Biblioteca -->
+            <article
+                class="mode-card cyan"
+                onclick="abrirModo('Biblioteca')"
+            >
+
+                <div class="mode-icon">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+
+                <div class="mode-image">
+                    <i class="fa-solid fa-book"></i>
+                </div>
+
+                <div class="mode-content">
+
+                    <h3>BIBLIOTECA</h3>
+
+                    <p>
+                        Consulta conceptos, guías
+                        y recursos académicos.
+                    </p>
+
+                </div>
+
+                <button class="arrow">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </article>
+
+        </section>
+
+
+        <!-- Frase -->
+        <section class="quote">
+
+            <i class="fa-solid fa-quote-left"></i>
+
+            <p>
+                La arquitectura de computadoras no es solo
+                entender máquinas, es comprender cómo
+                funcionan y resuelven problemas.
+            </p>
+
+            <i class="fa-solid fa-microchip"></i>
+
+        </section>
+
+
+        <!-- Redes -->
+        <!-- <footer>
+
+            <div class="social">
+
+                <h3>SÍGUENOS</h3>
+
+                <div class="social-icons">
+
+                    <a href="#">
+                        <i class="fa-brands fa-github"></i>
+                    </a>
+
+                    <a href="#">
+                        <i class="fa-brands fa-youtube"></i>
+                    </a>
+
+                    <a href="#">
+                        <i class="fa-solid fa-globe"></i>
+                    </a>
+
+                </div>
+
+            </div>
+
+        </footer>
+        -->
+    </main>
+
+
+    <!-- Javascript -->
+    <script src="js/menu.js"></script>
+
+</body>
+</html>
