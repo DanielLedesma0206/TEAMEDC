@@ -3538,3 +3538,204 @@ h1 {
   0%, 100% { box-shadow: 0 0 0 2px rgba(255,230,107,0.25), 0 0 20px rgba(255,230,107,0.30); }
   50%      { box-shadow: 0 0 0 3px rgba(255,230,107,0.45), 0 0 34px rgba(255,230,107,0.60); }
 }
+/* =================================================================
+   PC BUILDER · MENÚ PRINCIPAL (dashboard de inicio)
+   Barra lateral + tarjetas de modos. Se muestra cuando el <body>
+   tiene la clase .pb-home-active; en ese estado se oculta la app.
+   Usa la misma paleta del proyecto (#050712 / cian #7ed7ff / verde
+   #52ffb8 / violeta #b98cff) para que se sienta parte del mismo diseño.
+   ================================================================= */
+
+/* --- Al estar en Inicio, se esconde el resto de la interfaz --- */
+body.pb-home-active .topbar,
+body.pb-home-active .modnav,
+body.pb-home-active .module { display: none !important; }
+
+#homeRoot { display: none; }
+body.pb-home-active #homeRoot {
+  display: grid;
+  grid-template-columns: 272px 1fr;
+  gap: 22px;
+  align-items: start;
+  min-height: calc(100vh - 60px);
+  animation: pbFade .45s ease;
+}
+@keyframes pbFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ================= BARRA LATERAL ================= */
+.pb-side {
+  position: sticky;
+  top: 18px;
+  background: rgba(10, 16, 31, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 24px;
+  padding: 24px 18px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
+}
+
+.pb-avatar {
+  width: 96px; height: 96px;
+  margin: 4px auto 14px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 42px;
+  color: #7ed7ff;
+  background: radial-gradient(circle at 35% 30%, rgba(126,215,255,0.28), rgba(126,215,255,0.05));
+  border: 2px solid rgba(126, 215, 255, 0.55);
+  box-shadow: 0 0 26px rgba(126, 215, 255, 0.3);
+}
+
+.pb-user { text-align: center; }
+.pb-user h2 { margin: 0; font-size: 22px; }
+.pb-user span { color: #aeb8d4; font-size: 13px; }
+
+.pb-progress { margin: 18px 4px 6px; }
+.pb-progress-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  color: #c7d2f5; font-size: 12px; letter-spacing: .5px; margin-bottom: 7px;
+}
+.pb-progress-top strong { color: #7ed7ff; font-size: 14px; }
+.pb-bar {
+  height: 9px; border-radius: 99px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+}
+.pb-bar > span {
+  display: block; height: 100%; width: 0%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #52ffb8, #6bbdff, #b98cff);
+  transition: width .5s ease;
+}
+
+.pb-menu-title {
+  margin: 22px 6px 8px;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: #8794b3;
+}
+.pb-menu { display: grid; gap: 4px; }
+.pb-menu-item {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; text-align: left;
+  padding: 11px 13px; border-radius: 13px;
+  background: transparent; color: #c7d2f5;
+  border: 1px solid transparent;
+  cursor: pointer; font-size: 15px; font-weight: 600;
+  transition: .18s ease;
+}
+.pb-menu-item .pb-mi-ico { font-size: 17px; width: 20px; text-align: center; }
+.pb-menu-item:hover { background: rgba(255, 255, 255, 0.06); }
+.pb-menu-item.is-active {
+  color: #7ed7ff;
+  background: rgba(126, 215, 255, 0.12);
+  border-color: rgba(126, 215, 255, 0.35);
+  box-shadow: inset 3px 0 0 #7ed7ff;
+}
+
+/* ================= ÁREA PRINCIPAL ================= */
+.pb-main { min-width: 0; padding-top: 6px; }
+
+.pb-hero {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; margin-bottom: 4px;
+}
+.pb-logo-chip {
+  width: 54px; height: 54px; border-radius: 15px;
+  display: grid; place-items: center; font-size: 28px;
+  background: linear-gradient(135deg, #0a3a66, #06263f);
+  border: 1px solid rgba(126, 215, 255, 0.5);
+  box-shadow: 0 0 28px rgba(107, 189, 255, 0.5);
+}
+.pb-hero h1 {
+  margin: 0; font-size: clamp(34px, 5vw, 54px); letter-spacing: -1px;
+  text-shadow: 0 0 30px rgba(107, 189, 255, 0.55);
+}
+.pb-hero h1 b { color: #6bbdff; font-weight: 800; }
+
+.pb-divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 14px auto 26px; max-width: 760px;
+  color: #aeb8d4; font-size: 13px; letter-spacing: 3px; text-transform: uppercase;
+}
+.pb-divider::before, .pb-divider::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(126,215,255,.5), transparent);
+}
+
+/* --- Rejilla de tarjetas de modo --- */
+.pb-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.pb-card {
+  --c: #6bbdff;
+  position: relative;
+  text-align: left;
+  padding: 24px 22px 60px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--c) 14%, transparent), transparent 55%),
+    rgba(10, 16, 31, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.pb-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--c) 60%, transparent);
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.4),
+              0 0 26px color-mix(in srgb, var(--c) 30%, transparent);
+}
+.pb-card-ico {
+  width: 66px; height: 66px; border-radius: 18px;
+  display: grid; place-items: center; font-size: 34px;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+}
+.pb-card h3 {
+  margin: 0 0 6px; font-size: 22px;
+  color: var(--c);
+}
+.pb-card p {
+  margin: 0; color: #b7c1df; font-size: 14px; line-height: 1.5;
+  max-width: 42ch;
+}
+.pb-card-go {
+  position: absolute; right: 20px; bottom: 20px;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 18px;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  transition: .2s ease;
+}
+.pb-card:hover .pb-card-go {
+  background: var(--c); color: #041018; transform: translateX(3px);
+}
+
+/* Botón de ayuda flotante en la esquina del área principal */
+.pb-help {
+  position: absolute; top: 6px; right: 4px;
+  padding: 7px 14px; border-radius: 999px;
+  color: #c7d2f5; font-size: 13px; cursor: pointer;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.pb-help:hover { background: rgba(255, 255, 255, 0.14); }
+.pb-main { position: relative; }
+
+/* ================= RESPONSIVO ================= */
+@media (max-width: 1100px) {
+  body.pb-home-active #homeRoot { grid-template-columns: 1fr; }
+  .pb-side { position: static; }
+  .pb-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .pb-cards { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #homeRoot, .pb-card { animation: none !important; transition: none !important; }
+}
