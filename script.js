@@ -1937,4 +1937,179 @@ initBuild();
   renderQuizHome();
   renderGlossary();
 
+  /* =================================================================
+   PC BUILDER · MENÚ PRINCIPAL (dashboard de inicio)
+   -----------------------------------------------------------------
+   Crea una pantalla de inicio con barra lateral + tarjetas de modos
+   y la conecta con los módulos que YA existen en el proyecto:
+     modTeoria · modCatalogo · modEnsamble · modCompat · modQuiz · modGloss
+   No modifica tu lógica; solo agrega la pantalla y la navegación.
+   Requiere: index.html con <div class="app"> y <nav id="modNav">.
+   ================================================================= */
+(function () {
+  "use strict";
+
+  /* Inyecta la hoja de estilos del menú (así solo agregas 1 línea al HTML) */
+  if (!document.querySelector('link[data-pb-home]')) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "./home.css";
+    link.setAttribute("data-pb-home", "1");
+    document.head.appendChild(link);
+  }
+
+  /* Tarjetas de modo -> módulo destino existente */
+  const MODES = [
+    { mod: "modEnsamble", icon: "🖥️", color: "#3aa0ff", title: "Ensamblaje",
+      desc: "Arma tu PC paso a paso arrastrando cada componente a su lugar." },
+    { mod: "modTeoria",   icon: "🎓", color: "#3ddc84", title: "Modo estudio",
+      desc: "Aprende la arquitectura de la computadora de forma interactiva." },
+    { mod: "modCatalogo", icon: "🧩", color: "#b98cff", title: "Catálogo",
+      desc: "Explora cada componente: tipos, comparativas y cómo elegirlo." },
+    { mod: "modCompat",   icon: "⚙️", color: "#ffb340", title: "Compatibilidad",
+      desc: "Configura un equipo y comprueba si enciende, con el porqué de cada regla." },
+    { mod: "modQuiz",     icon: "📝", color: "#ff5d6c", title: "Autoevaluación",
+      desc: "Pon a prueba lo aprendido con un cuestionario que cambia cada intento." },
+    { mod: "modGloss",    icon: "📚", color: "#33c9ff", title: "Biblioteca",
+      desc: "Consulta el glosario con los términos clave del hardware." }
+  ];
+
+  /* Menú lateral (adaptado a lo que sí hace tu proyecto) */
+  const MENU = [
+    { key: "inicio",      icon: "🏠", label: "Inicio" },
+    { key: "modEnsamble", icon: "🖥️", label: "Ensamblar" },
+    { key: "modTeoria",   icon: "🎓", label: "Estudiar" },
+    { key: "modQuiz",     icon: "📝", label: "Evaluación" },
+    { key: "modGloss",    icon: "📚", label: "Glosario" },
+    { key: "config",      icon: "⚙️", label: "Configuración" }
+  ];
+
+  function toast(msg) {
+    if (typeof window.showToast === "function") window.showToast(msg);
+  }
+
+  function build() {
+    const app = document.querySelector(".app");
+    if (!app || document.getElementById("homeRoot")) return;
+
+    const cardsHTML = MODES.map(m => `
+      <button class="pb-card" style="--c:${m.color}" data-goto="${m.mod}" type="button">
+        <span class="pb-card-ico">${m.icon}</span>
+        <h3>${m.title}</h3>
+        <p>${m.desc}</p>
+        <span class="pb-card-go" aria-hidden="true">→</span>
+      </button>`).join("");
+
+    const menuHTML = MENU.map((it, i) => `
+      <button class="pb-menu-item${i === 0 ? " is-active" : ""}" data-menu="${it.key}" type="button">
+        <span class="pb-mi-ico">${it.icon}</span>${it.label}
+      </button>`).join("");
+
+    const root = document.createElement("div");
+    root.id = "homeRoot";
+    root.innerHTML = `
+      <aside class="pb-side">
+        <div class="pb-avatar">👤</div>
+        <div class="pb-user"><h2>Estudiante</h2><span>Nivel 1</span></div>
+
+        <div class="pb-progress">
+          <div class="pb-progress-top"><span>Progreso del montaje</span><strong id="pbProgPct">0%</strong></div>
+          <div class="pb-bar"><span id="pbProgFill"></span></div>
+        </div>
+
+        <p class="pb-menu-title">Menú</p>
+        <nav class="pb-menu">${menuHTML}</nav>
+      </aside>
+
+      <main class="pb-main">
+        <button class="pb-help" type="button" data-menu="ayuda">? Ayuda</button>
+
+        <div class="pb-hero">
+          <div class="pb-logo-chip">🔧</div>
+          <h1>PC<b>Builder</b></h1>
+        </div>
+        <div class="pb-divider">Elige un modo para comenzar</div>
+
+        <div class="pb-cards">${cardsHTML}</div>
+      </main>`;
+
+    app.prepend(root);
+
+    /* Tarjetas -> abrir módulo */
+    root.querySelectorAll("[data-goto]").forEach(el =>
+      el.addEventListener("click", () => openMode(el.dataset.goto)));
+
+    /* Menú lateral */
+    root.querySelectorAll("[data-menu]").forEach(el =>
+      el.addEventListener("click", () => menuAction(el.dataset.menu, el)));
+
+    /* Botón "Inicio" dentro de la barra de módulos para poder regresar */
+    const nav = document.getElementById("modNav");
+    if (nav && !document.getElementById("pbHomeBtn")) {
+      const b = document.createElement("button");
+      b.id = "pbHomeBtn";
+      b.className = "modnav-btn";
+      b.type = "button";
+      b.innerHTML = "🏠 Inicio";
+      b.addEventListener("click", goHome);
+      nav.prepend(b);
+    }
+
+    goHome(); // arrancar en la pantalla de inicio
+  }
+
+  /* Abre un módulo existente (replica el comportamiento de modNav) */
+  function openMode(modId) {
+    document.body.classList.remove("pb-home-active");
+    document.querySelectorAll(".modnav-btn").forEach(b =>
+      b.classList.toggle("is-active", b.dataset.mod === modId));
+    document.querySelectorAll(".module").forEach(m =>
+      m.classList.toggle("is-active", m.id === modId));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goHome() {
+    document.body.classList.add("pb-home-active");
+    // resaltar "Inicio" en el menú lateral
+    document.querySelectorAll('.pb-menu-item').forEach(el =>
+      el.classList.toggle("is-active", el.dataset.menu === "inicio"));
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function menuAction(key, el) {
+    if (key === "inicio") { goHome(); return; }
+    if (key === "ayuda") {
+      toast("Elige una tarjeta para entrar a un modo. Usa 🏠 Inicio para volver aquí.");
+      return;
+    }
+    if (key === "config") {
+      const sb = document.getElementById("soundBtn");
+      if (sb) sb.click();
+      else toast("Ajustes disponibles dentro de cada módulo.");
+      return;
+    }
+    openMode(key); // es un id de módulo (modEnsamble, modTeoria, ...)
+  }
+
+  /* Progreso = avance real del ensamblaje (usa funciones globales del script) */
+  function updateProgress() {
+    let pct = 0;
+    try {
+      if (typeof effectivePlaced === "function" && typeof effectiveTotal === "function") {
+        const total = effectiveTotal();
+        if (total > 0) pct = Math.round((effectivePlaced() / total) * 100);
+      }
+    } catch (e) { /* si aún no está listo, queda en 0% */ }
+    const fill = document.getElementById("pbProgFill");
+    const lbl = document.getElementById("pbProgPct");
+    if (fill) fill.style.width = pct + "%";
+    if (lbl) lbl.textContent = pct + "%";
+  }
+
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", build);
+  else
+    build();
+})();
 })();
