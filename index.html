@@ -84,13 +84,20 @@
           <button id="xrayBtn" class="view-btn">👁 Transparente</button>
           <button id="centerBtn" class="view-btn">⟲ Centrar</button>
         </div>
-
+        <div id="instructionBubble" class="instruction-bubble"></div>
         <p class="orbit-hint">🖱️ Arrastra (clic izq.) para girar 360° · <strong>rueda = zoom hacia el cursor</strong> · <strong>clic derecho o Shift+arrastrar = mover/panear</strong> · “Capas” separa los componentes</p>
 
         <div class="board-scene" id="boardScene">
-
+          
           <!-- ============ GABINETE (torre) — ya armado ============ -->
           <div id="pcCase" class="pc-case view-iso">
+            <div class="slot case-slot side-panel-slot" data-target="case-close"><span>PANEL LATERAL</span></div>
+                          <!-- ===== Panel trasero de conexiones (periféricos) ===== -->
+            <div class="rear-io-label">PANEL TRASERO</div>
+            <div class="slot case-slot video-mobo-slot" data-target="video-mobo"><span>VIDEO PLACA</span></div>
+            <div class="slot case-slot usb-rear-slot" data-target="usb-rear"><span>USB 1</span></div>
+            <div class="slot case-slot usb-rear2-slot" data-target="usb-rear-2"><span>USB 2</span></div>
+            <div class="slot case-slot video-gpu-slot" data-target="video-gpu"><span>VIDEO GPU</span></div>
 
             <!-- Estructura del chasis (siempre presente) -->
             <div class="case-floor"></div>
@@ -235,8 +242,9 @@
 
       <!-- ============ PANEL DERECHO: guía + info ============ -->
       <aside class="panel info-panel">
+        <div id="learnPanel" class="learn-panel"></div>
         <h2>Guía de ensamblaje</h2>
-
+        <div id="catIndex" class="cat-index"></div>
         <div id="stepGuide" class="step-guide"></div>
 
         <button id="highlightBtn" class="primary-btn">Resaltar siguiente paso</button>
@@ -260,6 +268,7 @@
     <section id="modTeoria" class="module"></section>
     <section id="modCatalogo" class="module"></section>
     <section id="modCompat" class="module"></section>
+    <section id="modDiag" class="module"></section>
     <section id="modQuiz" class="module"></section>
     <section id="modGloss" class="module"></section>
 
