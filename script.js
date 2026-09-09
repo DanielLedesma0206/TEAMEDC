@@ -5,7 +5,6 @@
 
 /* dependsOn = piezas previas (string o array). Puede usar "group:NOMBRE".
    group = grupo de elección: basta instalar UN miembro (p. ej. refrigeración). */
-   
 const components = [
   {
     id: "standoffs", step: 1, name: "Separadores (standoffs)",
@@ -377,7 +376,7 @@ const PRESETS = {
   internal: [22, -33, 0.78]
 };
 let rotX = 57, rotZ = -33, zoom = 0.62;
-let panX = 0, panY = 0;
+let panX = -200, panY = 0;
 let autoOn = false, exploded = false, draggingBoard = false, panningBoard = false;
 if (window.innerWidth <= 1220) zoom = 0.5;
 if (window.innerWidth <= 720) zoom = 0.42;
@@ -971,7 +970,7 @@ function changeView(view) {
   const p = PRESETS[view];
   if (!p) return;
   rotX = p[0]; rotZ = p[1]; zoom = p[2];
-  panX = 0; panY = 0;               // recenter al elegir una vista
+  panX = -200; panY = 0;               // recenter al elegir una vista
   applyTransform();
   document.querySelectorAll(".view-btn[data-view]").forEach(b =>
     b.classList.toggle("active", b.dataset.view === view));
@@ -1543,30 +1542,23 @@ initBuild();
       { n: "Full/Mid Tower ATX", supports: ["ATX", "mATX", "ITX"], maxGpu: 360, maxCooler: 170 },
       { n: "MicroATX", supports: ["mATX", "ITX"], maxGpu: 300, maxCooler: 155 },
       { n: "Mini-ITX", supports: ["ITX"], maxGpu: 250, maxCooler: 120 } ] },
-    { key: "chipset", label: "Chipset", opts: [
-      { n: "AMD A520 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ramMax: 128, oc: false, pcie: "3.0", gama: "Básico" },
-      { n: "AMD B550 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ramMax: 128, oc: true, pcie: "4.0", gama: "Medio" },
-      { n: "AMD X570 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ramMax: 128, oc: true, pcie: "4.0", gama: "Alto" },
-      { n: "AMD X670 · AM5 · DDR5", socket: "AM5", ram: "DDR5", ramMax: 128, oc: true, pcie: "5.0", gama: "Alto" },
-      { n: "Intel B660 · LGA1700 · DDR5", socket: "LGA1700", ram: "DDR5", ramMax: 128, oc: false, pcie: "4.0", gama: "Medio" },
-      { n: "Intel Z790 · LGA1700 · DDR5", socket: "LGA1700", ram: "DDR5", ramMax: 192, oc: true, pcie: "5.0", gama: "Alto" } ] },
-    { key: "mobo", label: "Formato de placa", opts: [
-      { n: "ATX (4 ranuras RAM)", ff: "ATX", ramMax: 192, slots: 4 },
-      { n: "microATX (4 ranuras RAM)", ff: "mATX", ramMax: 128, slots: 4 },
-      { n: "Mini-ITX (2 ranuras RAM)", ff: "ITX", ramMax: 64, slots: 2 } ] },
+    { key: "mobo", label: "Tarjeta madre", opts: [
+      { n: "ATX X570 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ff: "ATX", ramMax: 128 },
+      { n: "ATX X670 · AM5 · DDR5", socket: "AM5", ram: "DDR5", ff: "ATX", ramMax: 128 },
+      { n: "ATX Z790 · LGA1700 · DDR5", socket: "LGA1700", ram: "DDR5", ff: "ATX", ramMax: 192 },
+      { n: "microATX B550 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ff: "mATX", ramMax: 128 } ] },
     { key: "cpu", label: "Procesador", opts: [
-      { n: "Ryzen 5 5600 · AM4 (65W)", socket: "AM4", tdp: 65, igpu: false, tier: 2, oc: false },
-      { n: "Ryzen 7 5700G · AM4 · iGPU (65W)", socket: "AM4", tdp: 65, igpu: true, tier: 2, oc: false },
-      { n: "Ryzen 7 7700 · AM5 · iGPU (65W)", socket: "AM5", tdp: 65, igpu: true, tier: 3, oc: false },
-      { n: "Intel i5-13400 · LGA1700 · iGPU (65W)", socket: "LGA1700", tdp: 65, igpu: true, tier: 2, oc: false },
-      { n: "Intel i7-13700K · LGA1700 (125W)", socket: "LGA1700", tdp: 125, igpu: true, tier: 4, oc: true } ] },
+      { n: "Ryzen 5 5600 · AM4 (65W)", socket: "AM4", tdp: 65, igpu: false, tier: 2 },
+      { n: "Ryzen 7 5700G · AM4 · iGPU (65W)", socket: "AM4", tdp: 65, igpu: true, tier: 2 },
+      { n: "Ryzen 7 7700 · AM5 · iGPU (65W)", socket: "AM5", tdp: 65, igpu: true, tier: 3 },
+      { n: "Intel i5-13400 · LGA1700 · iGPU (65W)", socket: "LGA1700", tdp: 65, igpu: true, tier: 2 },
+      { n: "Intel i7-13700K · LGA1700 (125W)", socket: "LGA1700", tdp: 125, igpu: true, tier: 4 } ] },
     { key: "ram", label: "Memoria RAM", opts: [
       { n: "16GB DDR4 3200", type: "DDR4", gb: 16 },
       { n: "32GB DDR4 3600", type: "DDR4", gb: 32 },
       { n: "16GB DDR5 5600", type: "DDR5", gb: 16 },
       { n: "64GB DDR5 6000", type: "DDR5", gb: 64 } ] },
     { key: "cooler", label: "Enfriamiento", opts: [
-      { n: "(sin disipador)", tdp: 0, h: 0 },
       { n: "Disipador stock (65W · 45mm)", tdp: 65, h: 45 },
       { n: "Torre de aire (220W · 160mm)", tdp: 220, h: 160 },
       { n: "Líquida AIO 240 (250W · radiador)", tdp: 250, h: 50 } ] },
@@ -1576,10 +1568,10 @@ initBuild();
       { n: "RTX 4070 (200W · 300mm · 1×8pin)", present: true, tdp: 200, len: 300, conn: 1, tier: 3 },
       { n: "RTX 4090 (450W · 340mm · 3×8pin)", present: true, tdp: 450, len: 340, conn: 3, tier: 5 } ] },
     { key: "storage", label: "Almacenamiento", opts: [
-      { n: "SSD NVMe 1TB", present: true, nvme: true },
-      { n: "SSD SATA 512GB", present: true, nvme: false },
-      { n: "HDD 2TB", present: true, nvme: false },
-      { n: "(ninguno)", present: false, nvme: false } ] },
+      { n: "SSD NVMe 1TB", present: true },
+      { n: "SSD SATA 512GB", present: true },
+      { n: "HDD 2TB", present: true },
+      { n: "(ninguno)", present: false } ] },
     { key: "psu", label: "Fuente de poder", opts: [
       { n: "450W · 1×PCIe 8pin", w: 450, pcie: 1 },
       { n: "650W · 2×PCIe 8pin", w: 650, pcie: 2 },
@@ -1588,16 +1580,15 @@ initBuild();
   ];
   const sel = {};
 
-    function specText(key, o) {
+  function specText(key, o) {
     switch (key) {
       case "case": return `Placas ${o.supports.join("/")} · GPU ≤ ${o.maxGpu}mm · disipador ≤ ${o.maxCooler}mm`;
-      case "chipset": return `Socket ${o.socket} · ${o.ram} · PCIe ${o.pcie} · ${o.oc ? "permite" : "sin"} overclock · gama ${o.gama}`;
-      case "mobo": return `Formato ${o.ff} · ${o.slots} ranuras · RAM máx ${o.ramMax}GB`;
-      case "cpu": return `${o.socket} · TDP ${o.tdp}W · ${o.igpu ? "con iGPU" : "SIN iGPU"}${o.oc ? " · desbloqueado" : ""} · nivel ${o.tier}`;
+      case "mobo": return `Socket ${o.socket} · ${o.ram} · ${o.ff} · RAM máx ${o.ramMax}GB`;
+      case "cpu": return `${o.socket} · TDP ${o.tdp}W · ${o.igpu ? "con iGPU" : "SIN iGPU"} · nivel ${o.tier}`;
       case "ram": return `${o.type} · ${o.gb}GB`;
-      case "cooler": return o.tdp === 0 ? "Sin sistema de enfriamiento" : `Disipa ${o.tdp}W · alto ${o.h}mm`;
+      case "cooler": return `Disipa ${o.tdp}W · alto ${o.h}mm`;
       case "gpu": return o.present ? `Dedicada · ${o.tdp}W · ${o.len}mm · ${o.conn}×8pin · nivel ${o.tier}` : "Integrada (usa el iGPU del CPU)";
-      case "storage": return o.present ? (o.nvme ? "SSD NVMe (bus PCIe)" : "Unidad SATA") : "Sin unidad";
+      case "storage": return o.present ? "Unidad presente" : "Sin unidad";
       case "psu": return `${o.w}W · ${o.pcie}×PCIe 8pin`;
     }
     return "";
@@ -1606,7 +1597,7 @@ initBuild();
   function renderConfig() {
     const host = document.getElementById("modCompat");
     host.innerHTML =
-      `<h2 class="mod-head">4 · Reglas de compatibilidad</h2>
+      `<h2 class="mod-head">4 · Compatibilidad y diagnóstico</h2>
        <p class="mod-sub">Arma tu equipo eligiendo un modelo por componente. Al <strong>Probar encendido</strong> se validan la compatibilidad <em>física</em> (socket, RAM, factor de forma, longitud de GPU, altura del disipador), la <em>eléctrica/térmica</em> (potencia y conectores de la fuente, enfriamiento) y los <em>requisitos de funcionamiento</em>, con la explicación de cada regla y una nota de <strong>cuello de botella</strong>.</p>
        <div class="config-wrap">
          <div class="panel"><h2>Configuración</h2><div id="configRows"></div>
@@ -1658,25 +1649,20 @@ initBuild();
 
   function runDiagnosis() {
     const out = document.getElementById("modCompat").querySelector("#diagOut");
-        const cpu = opt("cpu"), mobo = opt("mobo"), ram = opt("ram"), cooler = opt("cooler"),
-          gpu = opt("gpu"), storage = opt("storage"), psu = opt("psu"), casev = opt("case"),
-          chip = opt("chipset");
-    const ramMax = Math.min(chip.ramMax, mobo.ramMax);
+    const cpu = opt("cpu"), mobo = opt("mobo"), ram = opt("ram"), cooler = opt("cooler"),
+          gpu = opt("gpu"), storage = opt("storage"), psu = opt("psu"), casev = opt("case");
     const groups = [];
 
     const fis = [];
-    fis.push(cpu.socket === chip.socket
-      ? { s: "ok", t: `Socket compatible (${cpu.socket}).`, w: "El chipset determina el socket de la placa, y el CPU debe coincidir con él." }
-      : { s: "bad", t: `CPU incompatible: socket ${cpu.socket} ≠ ${chip.socket} del chipset ${chip.n.split(" ·")[0]}.`, w: "Cada chipset se fabrica para un socket concreto: un Ryzen AM4 no entra en una placa Intel LGA1700." });
-    fis.push(ram.type === chip.ram
-      ? { s: "ok", t: `RAM ${ram.type} compatible con el chipset.`, w: "El controlador de memoria del chipset define si la placa acepta DDR4 o DDR5." }
-      : { s: "bad", t: `RAM no detectada: el chipset admite ${chip.ram} y elegiste ${ram.type}.`, w: "DDR4 y DDR5 tienen la muesca en distinta posición: no son intercambiables." });
-    fis.push(ram.gb <= ramMax
-      ? { s: "ok", t: `Capacidad de RAM dentro del límite (${ram.gb} ≤ ${ramMax} GB).`, w: "El límite real es el menor entre lo que admite el chipset y las ranuras del formato." }
-      : { s: "bad", t: `Demasiada RAM: ${ram.gb} GB supera el máximo de esta combinación (${ramMax} GB).`, w: `El chipset admite hasta ${chip.ramMax} GB y el formato ${mobo.ff} llega a ${mobo.ramMax} GB con sus ${mobo.slots} ranuras.` });
-    fis.push(!cpu.oc || chip.oc
-      ? { s: "ok", t: cpu.oc ? `El chipset ${chip.gama.toLowerCase()} permite overclock del CPU desbloqueado.` : "Configuración de frecuencias correcta.", w: "Solo los chipsets de gama alta (Z, X) permiten subir la frecuencia del procesador." }
-      : { s: "info", t: `Overclock no disponible: el CPU está desbloqueado pero el chipset no lo permite.`, w: "El equipo funciona, pero pagaste por un CPU desbloqueado que no podrás aprovechar. Sería mejor un chipset Z790 o X." });
+    fis.push(cpu.socket === mobo.socket
+      ? { s: "ok", t: `Socket compatible (${cpu.socket}).`, w: "El socket del CPU debe coincidir físicamente con el de la placa." }
+      : { s: "bad", t: `CPU incompatible: socket ${cpu.socket} ≠ ${mobo.socket} de la placa.`, w: "Un CPU sólo encaja en placas con su mismo socket (AM4, AM5, LGA1700…)." });
+    fis.push(ram.type === mobo.ram
+      ? { s: "ok", t: `RAM ${ram.type} compatible con la placa.`, w: "La muesca y el bus difieren entre DDR4 y DDR5; deben coincidir." }
+      : { s: "bad", t: `RAM no detectada: la placa usa ${mobo.ram} y elegiste ${ram.type}.`, w: "DDR4 y DDR5 no son intercambiables físicamente." });
+    fis.push(ram.gb <= mobo.ramMax
+      ? { s: "ok", t: `Capacidad de RAM dentro del límite (${ram.gb} ≤ ${mobo.ramMax} GB).`, w: "Cada placa admite una capacidad máxima de memoria." }
+      : { s: "bad", t: `Demasiada RAM: ${ram.gb} GB supera el máximo de la placa (${mobo.ramMax} GB).`, w: "El controlador de memoria y la placa limitan la capacidad total." });
     fis.push(casev.supports.indexOf(mobo.ff) !== -1
       ? { s: "ok", t: `Factor de forma correcto: placa ${mobo.ff} entra en el gabinete.`, w: "El gabinete debe soportar el tamaño de la placa (ATX > microATX > ITX)." }
       : { s: "bad", t: `La placa (${mobo.ff}) no cabe en el gabinete.`, w: "Un gabinete pequeño no admite placas más grandes." });
@@ -1696,10 +1682,7 @@ initBuild();
     if (gpu.present) ele.push(psu.pcie >= gpu.conn
       ? { s: "ok", t: `Conectores PCIe suficientes (${psu.pcie} ≥ ${gpu.conn} que pide la GPU).`, w: "La GPU necesita cables PCIe de 8 pines desde la fuente." }
       : { s: "bad", t: `Faltan conectores: la GPU pide ${gpu.conn}×8pin y la fuente tiene ${psu.pcie}.`, w: "Sin los conectores PCIe correctos la GPU no recibe energía." });
-        if (cooler.tdp === 0) {
-      ele.push({ s: "bad", t: `Sin enfriamiento: el procesador no tiene disipador y genera ${cpu.tdp} W de calor.`, w: "Sin disipador el CPU alcanza su temperatura crítica en segundos y la placa corta la energía para protegerlo." });
-    } else
-      ele.push(cooler.tdp >= cpu.tdp
+    ele.push(cooler.tdp >= cpu.tdp
       ? { s: "ok", t: `Enfriamiento suficiente para ${cpu.tdp} W.`, w: "El disipador debe poder disipar al menos el TDP del CPU." }
       : { s: "bad", t: `Enfriamiento insuficiente: disipa ${cooler.tdp} W y el CPU genera ${cpu.tdp} W.`, w: "Un disipador corto provoca throttling o sobrecalentamiento." });
     groups.push({ title: "Compatibilidad eléctrica y térmica", checks: ele });
@@ -2129,850 +2112,4 @@ initBuild();
   else
     build();
 })();
-})();
-/* =================================================================
-   MÓDULO 6 · DIAGNÓSTICO DE ERRORES
-   El alumno enciende un equipo con falla, lee el POST y determina
-   la causa y la solución. Cubre los 7 mensajes del proyecto.
-   ================================================================= */
-(function () {
-
-  const shuffleD = a => {
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = (Math.random() * (i + 1)) | 0;
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  };
-
-  const CASES = [
-    {
-      id: "ram", tag: "No arranca",
-      titulo: "El equipo enciende pero la pantalla no da señal",
-      equipo: [
-        ["Placa madre", "ATX B650 · AM5 · DDR5"],
-        ["Procesador", "Ryzen 7 7700 (AM5)"],
-        ["Memoria", "2× 8 GB DDR4 3200"],
-        ["Almacenamiento", "SSD NVMe 1 TB"],
-        ["Fuente", "650 W"],
-        ["Enfriamiento", "Torre de aire 220 W"]
-      ],
-      sintoma: "Los ventiladores giran y los LED de la placa encienden, pero el monitor nunca recibe señal. La placa emite pitidos repetidos.",
-      post: [
-        { t: "Iniciando POST...", s: "ok" },
-        { t: "CPU detectado: Ryzen 7 7700 (AM5)", s: "ok" },
-        { t: "Comprobando módulos de memoria...", s: "warn" },
-        { t: "ERROR: RAM no detectada — ningún módulo válido en las ranuras", s: "bad" },
-        { t: "Código sonoro: 1 largo + 2 cortos (fallo de memoria)", s: "bad" },
-        { t: "POST detenido. No hay salida de video.", s: "bad" }
-      ],
-      causa: {
-        q: "¿Cuál es la causa más probable de la falla?",
-        opts: [
-          "La memoria es DDR4 y la placa solo admite DDR5",
-          "El procesador está dañado",
-          "El SSD NVMe no tiene sistema operativo",
-          "La fuente de 650 W es insuficiente"
-        ],
-        correct: 0,
-        fb: "El POST detectó el CPU sin problema, así que el procesador está bien. El fallo aparece justo al comprobar la memoria."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Sustituir los módulos por memoria DDR5 compatible con la placa",
-          "Formatear el SSD e instalar Windows",
-          "Cambiar la fuente por una de 850 W",
-          "Actualizar el controlador de video"
-        ],
-        correct: 0,
-        fb: "Sin sistema operativo el POST igual se completaría; aquí ni siquiera llega a buscar disco."
-      },
-      teoria: "DDR4 y DDR5 tienen la muesca en distinta posición y usan buses diferentes: no son intercambiables. Si un módulo no corresponde al tipo de la placa, el POST se detiene antes de dar video, porque el firmware necesita memoria para trabajar. Un fallo de memoria casi siempre se avisa con beeps o con el LED DRAM de la placa."
-    },
-    {
-      id: "cpu", tag: "No enciende",
-      titulo: "El procesador no entra en el socket de la placa",
-      equipo: [
-        ["Placa madre", "ATX Z790 · LGA1700 · DDR5"],
-        ["Procesador", "Ryzen 5 5600 (AM4)"],
-        ["Memoria", "16 GB DDR5 5600"],
-        ["Almacenamiento", "SSD NVMe 1 TB"],
-        ["Fuente", "650 W"],
-        ["Enfriamiento", "Torre de aire 220 W"]
-      ],
-      sintoma: "Al intentar montar el procesador, los pines no coinciden con el zócalo y la palanca no cierra. El equipo nunca llega a encender.",
-      post: [
-        { t: "Iniciando POST...", s: "ok" },
-        { t: "ERROR: CPU incompatible — no se detecta procesador en el socket", s: "bad" },
-        { t: "Socket de la placa: LGA1700 · Procesador instalado: AM4", s: "bad" },
-        { t: "Código sonoro: pitidos continuos (fallo de CPU)", s: "bad" },
-        { t: "POST abortado.", s: "bad" }
-      ],
-      causa: {
-        q: "¿Cuál es la causa de la falla?",
-        opts: [
-          "El socket del CPU (AM4) no coincide con el de la placa (LGA1700)",
-          "Falta aplicar pasta térmica",
-          "La memoria DDR5 no es compatible",
-          "El disipador es demasiado grande"
-        ],
-        correct: 0,
-        fb: "La pasta térmica y el disipador afectan la temperatura, no el encaje físico del procesador."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Usar un CPU LGA1700 (Intel) o cambiar la placa por una AM4",
-          "Forzar el procesador hasta que entre en el zócalo",
-          "Instalar más memoria RAM",
-          "Actualizar la BIOS de la placa"
-        ],
-        correct: 0,
-        fb: "Forzar el CPU dobla los pines y arruina la pieza de forma permanente: nunca se presiona un procesador."
-      },
-      teoria: "El socket es la interfaz física y eléctrica entre CPU y placa. AM4, AM5 y LGA1700 tienen distinto número y disposición de contactos, así que un procesador solo funciona en placas de su mismo socket. Es la primera compatibilidad que se revisa al elegir componentes, porque condiciona también el tipo de RAM."
-    },
-    {
-      id: "psu", tag: "Se apaga solo",
-      titulo: "El equipo se apaga al abrir un videojuego",
-      equipo: [
-        ["Placa madre", "ATX X670 · AM5"],
-        ["Procesador", "Ryzen 7 7700 (65 W)"],
-        ["Tarjeta gráfica", "RTX 4090 (450 W)"],
-        ["Memoria", "32 GB DDR5"],
-        ["Fuente", "450 W · 1× PCIe 8 pines"],
-        ["Enfriamiento", "Líquida AIO 240"]
-      ],
-      sintoma: "El equipo arranca al escritorio sin problema, pero se apaga de golpe en cuanto la tarjeta gráfica recibe carga. Al reiniciar vuelve a funcionar.",
-      post: [
-        { t: "POST correcto. Sistema iniciado.", s: "ok" },
-        { t: "Consumo en reposo: 95 W — dentro del límite", s: "ok" },
-        { t: "Carga gráfica detectada...", s: "warn" },
-        { t: "Consumo estimado bajo carga: ~635 W", s: "warn" },
-        { t: "ERROR: fuente insuficiente — protección OCP activada", s: "bad" },
-        { t: "Apagado de emergencia.", s: "bad" }
-      ],
-      causa: {
-        q: "¿Cuál es la causa de los apagones?",
-        opts: [
-          "La fuente de 450 W no cubre el consumo del CPU y la GPU bajo carga",
-          "El sistema operativo está corrupto",
-          "La memoria RAM está mal asentada",
-          "La refrigeración líquida no enfría lo suficiente"
-        ],
-        correct: 0,
-        fb: "Si fuera un problema de RAM o de sistema operativo, la falla aparecería también en reposo, no solo bajo carga gráfica."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Instalar una fuente de mayor potencia con los conectores PCIe necesarios",
-          "Reinstalar el sistema operativo",
-          "Bajar la resolución del monitor",
-          "Añadir más ventiladores al gabinete"
-        ],
-        correct: 0,
-        fb: "Reducir la carga puede ocultar el síntoma, pero la fuente sigue quedando corta: la solución es dimensionarla bien."
-      },
-      teoria: "El consumo se suma: base del sistema + TDP del CPU + consumo de la GPU. Aquí son unos 635 W frente a una fuente de 450 W, y además la RTX 4090 pide 3 conectores PCIe de 8 pines y la fuente solo trae uno. La regla práctica es dejar cerca de un 30 % de margen sobre el consumo estimado."
-    },
-    {
-      id: "storage", tag: "No inicia el sistema",
-      titulo: "Aparece “No boot device found” en pantalla",
-      equipo: [
-        ["Placa madre", "ATX B550 · AM4"],
-        ["Procesador", "Ryzen 5 5600"],
-        ["Memoria", "16 GB DDR4 3200"],
-        ["Almacenamiento", "SSD SATA con cable de datos únicamente"],
-        ["Fuente", "650 W"],
-        ["Enfriamiento", "Torre de aire"]
-      ],
-      sintoma: "El equipo enciende, muestra el logo de la placa y llega al POST sin errores, pero termina en un mensaje negro que dice que no encuentra dispositivo de arranque.",
-      post: [
-        { t: "POST correcto.", s: "ok" },
-        { t: "CPU y memoria detectados correctamente", s: "ok" },
-        { t: "Buscando unidades de almacenamiento...", s: "warn" },
-        { t: "SATA 1: vacío · SATA 2: vacío · M.2: vacío", s: "warn" },
-        { t: "ERROR: sin almacenamiento — no boot device found", s: "bad" },
-        { t: "Sistema detenido en el firmware.", s: "bad" }
-      ],
-      causa: {
-        q: "¿Por qué el firmware no encuentra la unidad?",
-        opts: [
-          "El SSD tiene el cable de datos pero le falta la alimentación SATA de la fuente",
-          "El procesador no tiene gráficos integrados",
-          "La memoria RAM es insuficiente",
-          "El disipador no está bien montado"
-        ],
-        correct: 0,
-        fb: "El POST se completó y hubo imagen en pantalla, así que CPU, RAM y video funcionan. El fallo está únicamente en el almacenamiento."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Conectar el cable de alimentación SATA de 15 pines desde la fuente al disco",
-          "Sustituir la memoria RAM",
-          "Conectar el monitor a la tarjeta gráfica",
-          "Cambiar la pasta térmica del procesador"
-        ],
-        correct: 0,
-        fb: "Sin energía el disco no gira ni responde, por más que el cable de datos esté puesto."
-      },
-      teoria: "Todo disco SATA necesita dos cables: el plano de datos, que va a un puerto SATA de la placa, y el de alimentación de 15 pines, que viene de la fuente. Olvidar el segundo es de los errores más comunes de ensamble, y el síntoma es exactamente este: el equipo llega al firmware pero no encuentra desde dónde arrancar."
-    },
-    {
-      id: "cooling", tag: "Apagado térmico",
-      titulo: "El equipo se apaga a los pocos segundos de encender",
-      equipo: [
-        ["Placa madre", "ATX Z790 · LGA1700"],
-        ["Procesador", "Intel i7-13700K (125 W)"],
-        ["Enfriamiento", "Sin disipador instalado"],
-        ["Memoria", "32 GB DDR5"],
-        ["Almacenamiento", "SSD NVMe 1 TB"],
-        ["Fuente", "850 W"]
-      ],
-      sintoma: "El equipo arranca correctamente, pero a los pocos segundos se apaga por completo. Cada intento dura menos que el anterior.",
-      post: [
-        { t: "POST correcto. Sistema iniciado.", s: "ok" },
-        { t: "Temperatura del CPU: 62 °C", s: "ok" },
-        { t: "AVISO: CPU_FAN sin lectura de RPM", s: "warn" },
-        { t: "Temperatura del CPU: 94 °C — throttling activo", s: "warn" },
-        { t: "ERROR: sin enfriamiento — temperatura crítica (105 °C)", s: "bad" },
-        { t: "Apagado de protección térmica.", s: "bad" }
-      ],
-      causa: {
-        q: "¿Cuál es la causa del apagado?",
-        opts: [
-          "El procesador no tiene disipador, así que no puede evacuar sus 125 W de calor",
-          "La fuente de 850 W es insuficiente",
-          "El SSD NVMe está dañado",
-          "La memoria DDR5 no es compatible"
-        ],
-        correct: 0,
-        fb: "La fuente sobra para este equipo y el POST se completó sin errores de memoria ni de disco. La pista está en la temperatura y en el CPU_FAN sin RPM."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Montar un disipador que cubra el TDP del CPU y conectarlo al cabezal CPU_FAN",
-          "Dejar el gabinete abierto para que entre aire",
-          "Reducir la capacidad de la memoria RAM",
-          "Reinstalar el sistema operativo"
-        ],
-        correct: 0,
-        fb: "Abrir el gabinete baja unos grados, pero un CPU de 125 W sin disipador se calienta en segundos: no es una solución."
-      },
-      teoria: "El apagado térmico es una protección: antes de dañarse, el procesador reduce su frecuencia (throttling) y, si la temperatura sigue subiendo, corta la energía. Por eso el disipador debe poder disipar al menos el TDP del CPU. La advertencia de CPU_FAN sin RPM es la señal de diagnóstico clave."
-    },
-    {
-      id: "video", tag: "Sin imagen",
-      titulo: "No hay imagen aunque el equipo arranca bien",
-      equipo: [
-        ["Placa madre", "ATX B550 · AM4"],
-        ["Procesador", "Ryzen 5 5600 (sin gráficos integrados)"],
-        ["Tarjeta gráfica", "Ninguna"],
-        ["Memoria", "16 GB DDR4"],
-        ["Almacenamiento", "SSD NVMe 1 TB"],
-        ["Fuente", "650 W"]
-      ],
-      sintoma: "Los ventiladores giran, el disco responde y no hay pitidos de error, pero el monitor permanece en negro y avisa que no hay señal.",
-      post: [
-        { t: "POST correcto: CPU, memoria y almacenamiento detectados", s: "ok" },
-        { t: "Buscando adaptador de video...", s: "warn" },
-        { t: "Ranura PCIe x16: vacía", s: "warn" },
-        { t: "Gráficos integrados: no disponibles en este CPU", s: "warn" },
-        { t: "ERROR: sin video — ninguna salida gráfica activa", s: "bad" }
-      ],
-      causa: {
-        q: "¿Por qué no hay imagen en el monitor?",
-        opts: [
-          "El CPU no tiene gráficos integrados y no hay tarjeta gráfica instalada",
-          "La memoria RAM está mal colocada",
-          "El monitor está apagado",
-          "La fuente no tiene potencia suficiente"
-        ],
-        correct: 0,
-        fb: "El POST se completó sin errores de memoria y detectó el almacenamiento, así que el problema no está ahí."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Instalar una GPU dedicada en la ranura PCIe x16 y conectar el monitor a ella",
-          "Cambiar el cable de datos del disco",
-          "Añadir un segundo módulo de memoria",
-          "Conectar el monitor al puerto de video de la placa madre"
-        ],
-        correct: 0,
-        fb: "Los puertos de video de la placa solo funcionan cuando el procesador tiene gráficos integrados, y este no los tiene."
-      },
-      teoria: "La imagen puede venir de dos sitios: los gráficos integrados del procesador (iGPU) o una tarjeta gráfica dedicada. Si el CPU no trae iGPU, como los Ryzen sin sufijo G, la GPU dedicada deja de ser opcional y se vuelve obligatoria."
-    },
-    {
-      id: "monitor", tag: "Sin imagen",
-      titulo: "Sin señal en el monitor, pero la tarjeta gráfica está instalada",
-      equipo: [
-        ["Placa madre", "ATX B550 · AM4"],
-        ["Procesador", "Ryzen 7 5700G (con gráficos integrados)"],
-        ["Tarjeta gráfica", "RTX 4070 instalada y alimentada"],
-        ["Monitor", "Conectado al puerto HDMI de la placa madre"],
-        ["Memoria", "16 GB DDR4"],
-        ["Fuente", "850 W"]
-      ],
-      sintoma: "El equipo enciende y arranca sin errores. La tarjeta gráfica tiene sus cables de poder y sus ventiladores giran, pero el monitor dice “sin señal”.",
-      post: [
-        { t: "POST correcto. Sistema iniciado.", s: "ok" },
-        { t: "GPU dedicada detectada en PCIe x16", s: "ok" },
-        { t: "Salida de video activa: PCIe x16 (GPU dedicada)", s: "ok" },
-        { t: "AVISO: salida de la placa madre desactivada al detectar GPU", s: "warn" },
-        { t: "No se detecta monitor en la salida activa.", s: "bad" }
-      ],
-      causa: {
-        q: "¿Cuál es la causa del problema?",
-        opts: [
-          "El monitor está conectado a la placa y no a la tarjeta gráfica",
-          "La tarjeta gráfica está averiada",
-          "Falta instalar el sistema operativo",
-          "La fuente no alimenta la GPU"
-        ],
-        correct: 0,
-        fb: "El POST detectó la GPU y sus ventiladores giran, señal de que recibe energía y funciona."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Pasar el cable del monitor a una salida de la tarjeta gráfica",
-          "Quitar la tarjeta gráfica del equipo",
-          "Cambiar el monitor por uno nuevo",
-          "Reinstalar los controladores desde otro equipo"
-        ],
-        correct: 0,
-        fb: "Quitar la GPU devolvería la imagen por la placa, pero se perdería todo el rendimiento gráfico: no es la solución."
-      },
-      teoria: "Cuando hay una tarjeta gráfica dedicada, la mayoría de las placas desactivan automáticamente su salida de video y toda la imagen pasa por la GPU. El monitor debe conectarse entonces a los puertos de la tarjeta. Es uno de los errores más frecuentes al terminar un ensamble."
-    },
-    {
-      id: "eps", tag: "No arranca",
-      titulo: "Los ventiladores giran un instante y todo se detiene",
-      equipo: [
-        ["Placa madre", "ATX X570 · AM4"],
-        ["Procesador", "Ryzen 5 5600"],
-        ["Cable ATX 24 pines", "Conectado"],
-        ["Cable EPS 8 pines (CPU)", "Sin conectar"],
-        ["Memoria", "16 GB DDR4"],
-        ["Fuente", "650 W"]
-      ],
-      sintoma: "Al pulsar el botón de encendido los ventiladores dan un tirón y el equipo se apaga de inmediato. No hay imagen ni pitidos.",
-      post: [
-        { t: "Alimentación de la placa detectada (ATX 24 pines)", s: "ok" },
-        { t: "Comprobando alimentación del procesador...", s: "warn" },
-        { t: "ERROR: conector EPS 12 V ausente — el VRM no recibe energía", s: "bad" },
-        { t: "POST no iniciado. LED CPU encendido en la placa.", s: "bad" }
-      ],
-      causa: {
-        q: "¿Cuál es la causa de la falla?",
-        opts: [
-          "Falta conectar el cable EPS de 8 pines que alimenta al procesador",
-          "La memoria RAM es del tipo equivocado",
-          "El disco duro no está formateado",
-          "El botón de encendido está mal conectado"
-        ],
-        correct: 0,
-        fb: "Si el problema fuera del botón, el equipo no reaccionaría en absoluto; aquí sí hay un intento de arranque."
-      },
-      fix: {
-        q: "¿Cuál es la solución correcta?",
-        opts: [
-          "Conectar el cable EPS de 8 pines en el cabezal superior izquierdo de la placa",
-          "Cambiar la fuente por una de mayor potencia",
-          "Retirar un módulo de memoria",
-          "Reemplazar el procesador"
-        ],
-        correct: 0,
-        fb: "La fuente de 650 W es suficiente para este equipo; el problema es que su cable de CPU nunca se conectó."
-      },
-      teoria: "El ATX de 24 pines alimenta la placa, pero el procesador tiene su propia línea de 12 V: el conector EPS de 8 pines, que va al VRM en la esquina superior izquierda. Sin él la placa enciende sus LED, pero el CPU no puede arrancar y el POST nunca empieza."
-    },
-    {
-      id: "ok", tag: "Revisión",
-      titulo: "Equipo recién ensamblado: revisión de arranque",
-      equipo: [
-        ["Placa madre", "ATX X570 · AM4 · DDR4"],
-        ["Procesador", "Ryzen 5 5600 (65 W)"],
-        ["Tarjeta gráfica", "RTX 4070 · monitor conectado a la GPU"],
-        ["Memoria", "2× 8 GB DDR4 3200 en A2/B2"],
-        ["Almacenamiento", "SSD NVMe 1 TB"],
-        ["Fuente", "650 W · 2× PCIe 8 pines"],
-        ["Enfriamiento", "Torre de aire 220 W en CPU_FAN"]
-      ],
-      sintoma: "Es el primer arranque después del ensamble. El técnico pide verificar si el equipo quedó correctamente armado antes de instalar el sistema operativo.",
-      post: [
-        { t: "Iniciando POST...", s: "ok" },
-        { t: "CPU detectado: Ryzen 5 5600 · CPU_FAN 980 RPM", s: "ok" },
-        { t: "Memoria: 16384 MB en doble canal (A2/B2)", s: "ok" },
-        { t: "GPU dedicada detectada · salida de video activa", s: "ok" },
-        { t: "Almacenamiento: SSD NVMe 1 TB detectado", s: "ok" },
-        { t: "Temperatura del CPU: 38 °C", s: "ok" },
-        { t: "SISTEMA FUNCIONAL — POST completado sin errores", s: "ok" }
-      ],
-      causa: {
-        q: "¿Qué conclusión corresponde a este arranque?",
-        opts: [
-          "El sistema es funcional: no hay ninguna falla que corregir",
-          "Falta enfriamiento porque el CPU marca 38 °C",
-          "La memoria está mal instalada por usar dos módulos",
-          "La GPU no está siendo detectada"
-        ],
-        correct: 0,
-        fb: "Conviene leer el POST completo antes de buscar culpables: aquí todas las comprobaciones salieron correctas."
-      },
-      fix: {
-        q: "¿Cuál es el siguiente paso adecuado?",
-        opts: [
-          "Instalar el sistema operativo en el SSD NVMe",
-          "Sustituir la fuente por una de 1000 W",
-          "Retirar uno de los módulos de memoria",
-          "Cambiar el disipador por uno de mayor tamaño"
-        ],
-        correct: 0,
-        fb: "El hardware ya quedó validado por el POST; lo que falta es el software."
-      },
-      teoria: "Un POST limpio confirma que el firmware reconoce procesador, memoria, video y almacenamiento, y que la refrigeración responde. Los 38 °C en reposo son normales y los dos módulos en A2/B2 activan el doble canal. Saber reconocer que un equipo está bien es parte del diagnóstico, porque evita cambiar piezas sanas."
-    }
-  ];
-
-  const N_CASOS = 6;
-  let LISTA = [], ci = 0, aciertos = 0, fallos = 0;
-  const host = document.getElementById("modDiag");
-  if (!host) return;
-
-  function startLab() {
-    LISTA = shuffleD(CASES.slice()).slice(0, N_CASOS);
-    ci = 0; aciertos = 0; fallos = 0;
-    host.innerHTML =
-      `<h2 class="mod-head">6 · Diagnóstico de errores</h2>
-       <p class="mod-sub">Cada caso presenta un equipo ya ensamblado con una posible falla. Pulsa <strong>Encender equipo</strong>, analiza los mensajes del POST y determina la causa y su solución. Al final recibirás un reporte con tu desempeño.</p>
-       <div id="diagLab"></div>`;
-    renderCase();
-  }
-
-  function renderCase() {
-    const lab = host.querySelector("#diagLab");
-    if (ci >= LISTA.length) return renderReport();
-    const c = LISTA[ci];
-
-    lab.innerHTML =
-      `<div class="diag-progress">Caso ${ci + 1} de ${LISTA.length} · Diagnósticos correctos: ${aciertos}</div>
-       <div class="case-card" id="caseCard">
-         <span class="case-tag">${c.tag}</span>
-         <h3 class="case-title">${c.titulo}</h3>
-         <div class="case-grid">
-           <div class="case-specs">
-             <h4>Equipo bajo revisión</h4>
-             <table class="spec-table"><tbody>
-               ${c.equipo.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}
-             </tbody></table>
-           </div>
-           <div class="case-report">
-             <h4>Reporte del usuario</h4>
-             <p class="case-symptom">${c.sintoma}</p>
-             <button class="power-test" id="powerTest" type="button">⏻ Encender equipo</button>
-           </div>
-         </div>
-         <div class="post-screen" id="postScreen" hidden>
-           <div class="post-bar"><span class="post-dot"></span>Autodiagnóstico del sistema (POST)</div>
-           <div class="post-log" id="postLog"></div>
-         </div>
-         <div id="caseSteps"></div>
-       </div>`;
-
-    lab.querySelector("#powerTest").addEventListener("click", () => runPost(c));
-  }
-
-  function runPost(c) {
-    const btn = host.querySelector("#powerTest");
-    btn.disabled = true;
-    btn.textContent = "⏻ Encendiendo...";
-    const screen = host.querySelector("#postScreen");
-    const log = host.querySelector("#postLog");
-    screen.hidden = false;
-    log.innerHTML = "";
-
-    let i = 0;
-    (function next() {
-      if (i >= c.post.length) {
-        btn.textContent = "⏻ Prueba realizada";
-        try {
-          if (c.post[c.post.length - 1].s === "bad") sfxError(); else sfxPower();
-        } catch (e) {}
-        setTimeout(() => askCause(c), 350);
-        return;
-      }
-      const li = c.post[i];
-      const row = document.createElement("div");
-      row.className = "post-line " + li.s;
-      row.textContent = li.t;
-      log.appendChild(row);
-      log.scrollTop = log.scrollHeight;
-      i++;
-      setTimeout(next, 620);
-    })();
-  }
-
-  function block(titulo, data, id) {
-    const order = shuffleD(data.opts.map((_, i) => i));
-    return `<div class="case-step">
-      <h4 class="case-step-h">${titulo}</h4>
-      <p class="case-q">${data.q}</p>
-      <div class="case-opts" id="${id}">
-        ${order.map(i => `<button class="case-opt" type="button" data-i="${i}">${data.opts[i]}</button>`).join("")}
-      </div>
-      <div class="case-fb" id="${id}Fb"></div>
-    </div>`;
-  }
-
-  function askCause(c) {
-    host.querySelector("#caseSteps").innerHTML =
-      block("Paso 1 · Identifica la causa", c.causa, "causaOpts");
-    wireOptions(c, "causa");
-  }
-
-  function askFix(c) {
-    const steps = host.querySelector("#caseSteps");
-    steps.insertAdjacentHTML("beforeend",
-      block("Paso 2 · Elige la solución", c.fix, "fixOpts"));
-    wireOptions(c, "fix");
-    steps.lastElementChild.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-
-  function wireOptions(c, fase) {
-    const data = fase === "causa" ? c.causa : c.fix;
-    const id = fase === "causa" ? "causaOpts" : "fixOpts";
-    const cont = host.querySelector("#" + id);
-    const fb = host.querySelector("#" + id + "Fb");
-
-    cont.querySelectorAll(".case-opt").forEach(b => b.addEventListener("click", () => {
-      const ok = +b.dataset.i === data.correct;
-      cont.querySelectorAll(".case-opt").forEach(x => {
-        x.classList.add("disabled");
-        if (+x.dataset.i === data.correct) x.classList.add("correct");
-      });
-      if (!ok) b.classList.add("wrong");
-
-      fb.className = "case-fb " + (ok ? "ok" : "bad");
-      fb.innerHTML = (ok ? "✅ Diagnóstico correcto. " : "❌ No es la causa. ") + data.fb;
-
-      if (ok && fase === "causa") aciertos++;
-      if (!ok) fallos++;
-
-      if (fase === "causa") setTimeout(() => askFix(c), 700);
-      else setTimeout(() => closeCase(c), 500);
-    }));
-  }
-
-  function closeCase(c) {
-    const card = host.querySelector("#caseCard");
-    card.classList.add("solved");
-    card.insertAdjacentHTML("beforeend",
-      `<div class="case-teoria"><h4>Por qué ocurre</h4><p>${c.teoria}</p></div>
-       <div class="case-actions">
-         <button class="primary-btn" id="nextCase" type="button" style="width:auto">
-           ${ci + 1 >= LISTA.length ? "Ver reporte final" : "Siguiente caso ▸"}
-         </button>
-       </div>`);
-    host.querySelector("#nextCase").addEventListener("click", () => { ci++; renderCase(); });
-  }
-
-  function renderReport() {
-    const lab = host.querySelector("#diagLab");
-    const pct = Math.round(aciertos / LISTA.length * 100);
-    const msg = pct >= 80 ? "Excelente lectura del POST: identificas las fallas con precisión."
-              : pct >= 50 ? "Vas bien. Repasa los mensajes de arranque y las reglas de compatibilidad."
-              : "Conviene repasar los módulos de teoría y compatibilidad antes de volver a intentarlo.";
-    lab.innerHTML =
-      `<div class="case-card quiz-result">
-         <div class="score">${aciertos} / ${LISTA.length}</div>
-         <p style="font-size:20px;margin:6px 0 4px">${pct}% de causas identificadas</p>
-         <p class="small-text" style="margin-bottom:6px">Intentos fallidos durante el análisis: ${fallos}</p>
-         <p class="small-text" style="margin-bottom:16px">${msg}</p>
-         <button id="diagRetry" class="primary-btn" style="width:auto" type="button">Nuevos casos</button>
-       </div>`;
-    lab.querySelector("#diagRetry").addEventListener("click", startLab);
-  }
-
-  startLab();
-})();
-/* =================================================================
-   PERIFÉRICOS EN EL ENSAMBLE (monitor, teclado y mouse)
-   Incluye la trampa didáctica del monitor: conectarlo al puerto de
-   video de la placa teniendo GPU dedicada no da imagen.
-   ================================================================= */
-(function () {
-
-  /* ---------- 1. Nuevas piezas ---------- */
-  components.push(
-    {
-      id: "keyboard", step: 99, name: "Teclado",
-      short: "Dispositivo de entrada · USB.", type: "keyboard", target: "usb-rear",
-      dependsOn: "screwPanel",
-      info: "El teclado es un dispositivo de ENTRADA: convierte tus pulsaciones en datos que el CPU procesa. Se conecta a cualquier puerto USB del panel trasero (o frontal). No necesita controladores especiales para funcionar en el arranque.",
-      wrong: "El teclado se conecta a un puerto USB del panel trasero del gabinete."
-    },
-    {
-      id: "mouse", step: 99, name: "Mouse",
-      short: "Dispositivo de entrada · USB.", type: "mouse", target: "usb-rear-2",
-      dependsOn: "keyboard",
-      info: "El mouse también es un dispositivo de ENTRADA. Se conecta a otro puerto USB libre del panel trasero. Junto con el teclado permite operar el sistema desde el primer arranque.",
-      wrong: "El mouse se conecta a otro puerto USB libre del panel trasero."
-    },
-    {
-      id: "monitor", step: 99, name: "Monitor",
-      short: "Salida de video · ¡cuidado dónde lo conectas!", type: "monitor", target: "video-gpu",
-      dependsOn: ["mouse", "gpu"],
-      info: "El monitor es un dispositivo de SALIDA. Como este equipo tiene tarjeta gráfica dedicada, el cable debe ir a una salida de la GPU (parte baja del panel trasero). Si se conecta al puerto de video de la placa madre, el monitor no recibirá señal.",
-      wrong: "El monitor va conectado a una salida de video de la tarjeta gráfica, en la parte baja del panel trasero."
-    }
-  );
-
-  /* ---------- 2. Renumerar los pasos ---------- */
-  (function () {
-    let s = 0; const g = {};
-    components.forEach(c => {
-      if (c.group) { if (g[c.group] == null) { s++; g[c.group] = s; } c.step = g[c.group]; }
-      else { s++; c.step = s; }
-    });
-  })();
-
-  /* ---------- 3. Etiquetas y fichas técnicas ---------- */
-  SLOT_LABELS["usb-rear"] = "USB 1";
-  SLOT_LABELS["usb-rear-2"] = "USB 2";
-  SLOT_LABELS["video-gpu"] = "VIDEO GPU";
-  SLOT_LABELS["video-mobo"] = "VIDEO PLACA";
-
-  TARGET_TO_NAME["usb-rear"] = "Teclado";
-  TARGET_TO_NAME["usb-rear-2"] = "Mouse";
-  TARGET_TO_NAME["video-gpu"] = "Monitor";
-
-  SPECS.keyboard = [["Tipo", "Dispositivo de entrada"], ["Interfaz", "USB / inalámbrico"],
-                    ["Formato", "104 teclas"], ["Función", "Introducir datos y comandos"]];
-  SPECS.mouse    = [["Tipo", "Dispositivo de entrada"], ["Interfaz", "USB / inalámbrico"],
-                    ["Sensor", "Óptico 1600 DPI"], ["Función", "Señalar y seleccionar"]];
-  SPECS.monitor  = [["Tipo", "Dispositivo de salida"], ["Conexión", "HDMI / DisplayPort"],
-                    ["Resolución", "1920×1080"], ["Se conecta a", "La GPU dedicada, no a la placa"]];
-
-  /* ---------- 4. Visuales de las piezas nuevas ---------- */
-  const _createVisual = window.createVisual;
-  window.createVisual = function (type) {
-    const extra = { monitor: "monitor-visual", keyboard: "keyboard-visual", mouse: "mouse-visual" };
-    if (extra[type]) {
-      const el = document.createElement("div");
-      el.className = extra[type];
-      return el;
-    }
-    return _createVisual(type);
-  };
-
-  /* ---------- 5. Tolerancia fina (los puertos están muy juntos) ---------- */
-  const _getTolerance = window.getTolerance;
-  window.getTolerance = function (component) {
-    const fino = { monitor: 30, keyboard: 30, mouse: 30 };
-    return fino[component.type] || _getTolerance(component);
-  };
-
-  /* ---------- 6. Trampa didáctica del monitor ---------- */
-  const _checkDrop = window.checkDrop;
-  window.checkDrop = function (component, x, y) {
-    if (component.id === "monitor" && depsMet(component)) {
-      const trampa = document.querySelector('.slot[data-target="video-mobo"]');
-      if (trampa && isPointInsideSlot(x, y, trampa, 34)) {
-        flashWrong(trampa);
-        showError(
-          "Ese puerto no dará imagen",
-          "Conectaste el monitor al puerto de video de la placa madre. Como el equipo tiene una tarjeta gráfica dedicada, la placa desactiva su salida y toda la imagen pasa por la GPU: el monitor se quedaría en negro con el aviso «sin señal». Los puertos de video de la placa solo funcionan cuando el procesador tiene gráficos integrados. Conecta el cable a una salida de la tarjeta gráfica, en la parte baja del panel trasero."
-        );
-        return;
-      }
-    }
-    return _checkDrop(component, x, y);
-  };
-
-  /* ---------- 7. Refrescar la interfaz con las piezas nuevas ---------- */
-  initBuild();
-})();
-/* =================================================================
-   MÓDULO 5 · EXPLICACIÓN CONTEXTUAL
-   La teoría llega ANTES de instalar, no después: panel de aprendizaje
-   del paso actual, instrucción sobre la escena, índice de categorías
-   y resaltado permanente del destino.
-   ================================================================= */
-(function () {
-
-  const learnPanel = document.getElementById("learnPanel");
-  const bubble = document.getElementById("instructionBubble");
-  const catIndex = document.getElementById("catIndex");
-
-  /* ---------- Categorías del ensamble ---------- */
-  const CATEGORIAS = [
-    { n: "Preparación del chasis", ids: ["standoffs", "mobo", "screwMobo"] },
-    { n: "Procesador y refrigeración", ids: ["cpu", "paste", "cooler", "aio", "cpuFan"] },
-    { n: "Memoria y almacenamiento", ids: ["ram1", "ram2", "m2", "ssd", "hdd", "screwDrives"] },
-    { n: "Energía", ids: ["psu", "screwPsu", "eps", "atx", "pcie", "sataPower"] },
-    { n: "Expansión y ventilación", ids: ["gpu", "screwGpu", "fanFront", "fanRear", "screwFans"] },
-    { n: "Conexiones del panel frontal", ids: ["sataData", "pwrSw", "rstSw", "hddLed", "pwrLed", "usbFront", "audioFront"] },
-    { n: "Cierre del equipo", ids: ["manage", "sidePanel", "screwPanel"] },
-    { n: "Periféricos", ids: ["keyboard", "mouse", "monitor"] }
-  ];
-
-  /* ---------- Instrucción corta y accionable por pieza ---------- */
-  const INSTRUCCIONES = {
-    standoffs: "Atornilla los separadores en la bandeja siguiendo el patrón ATX.",
-    mobo: "Apoya la placa sobre los separadores, alineando el I/O shield con la parte trasera.",
-    screwMobo: "Atornilla la placa en cada separador sin apretar de más.",
-    cpu: "Levanta la palanca del socket y alinea el triángulo dorado del CPU con el de la placa.",
-    paste: "Aplica un punto de pasta del tamaño de un guisante en el centro del procesador.",
-    cooler: "Asienta el disipador sobre la pasta y fíjalo con sus sujetadores.",
-    aio: "Coloca el bloque de la bomba sobre el CPU; el radiador se fija arriba del gabinete.",
-    cpuFan: "Conecta el cable del ventilador al cabezal CPU_FAN, junto al socket.",
-    ram1: "Abre los seguros, alinea la muesca y presiona hasta oír el clic.",
-    ram2: "Coloca el segundo módulo en B2 para activar el doble canal.",
-    m2: "Inserta el SSD en ángulo, bájalo y fíjalo con su tornillo.",
-    psu: "Coloca la fuente en su compartimento inferior, con el ventilador hacia abajo.",
-    screwPsu: "Fija la fuente con sus cuatro tornillos por la parte trasera.",
-    ssd: "Coloca el SSD de 2.5\" en su bahía.",
-    hdd: "Monta el disco de 3.5\" en la jaula de discos.",
-    screwDrives: "Atornilla ambos discos para que no vibren.",
-    gpu: "Inserta la GPU en el PCIe x16 hasta oír el clic del seguro.",
-    screwGpu: "Atornilla el bracket de la GPU al chasis.",
-    fanFront: "Monta el ventilador frontal con la flecha apuntando hacia dentro.",
-    fanRear: "Monta el ventilador trasero con la flecha apuntando hacia fuera.",
-    screwFans: "Fija cada ventilador con sus cuatro tornillos largos.",
-    eps: "Conecta el EPS de 8 pines en la esquina superior izquierda de la placa.",
-    atx: "Conecta el ATX de 24 pines en el borde derecho hasta que haga clic.",
-    pcie: "Conecta el cable PCIe a los conectores de energía de la GPU.",
-    sataData: "Lleva el cable plano SATA del disco a un puerto SATA de la placa.",
-    sataPower: "Conecta la alimentación SATA de la fuente a los discos.",
-    pwrSw: "Coloca el Power SW en su par de pines del F_PANEL. No tiene polaridad.",
-    rstSw: "Coloca el Reset SW en su par de pines. Tampoco tiene polaridad.",
-    hddLed: "Es un LED: respeta la polaridad, el positivo va en su pin marcado.",
-    pwrLed: "También es un LED: coloca el positivo en el pin correcto o no encenderá.",
-    usbFront: "Conecta el cable USB del gabinete a su cabezal en la placa.",
-    audioFront: "Conecta el audio frontal al cabezal HD Audio (AAFP).",
-    manage: "Pasa los cables por detrás de la bandeja y sujétalos con cinchos.",
-    sidePanel: "Coloca el panel lateral en su sitio.",
-    screwPanel: "Atornilla el panel y cierra el gabinete.",
-    keyboard: "Conecta el teclado a un puerto USB del panel trasero.",
-    mouse: "Conecta el mouse a otro puerto USB libre.",
-    monitor: "Conecta el monitor a una salida de la tarjeta gráfica, no a la placa."
-  };
-
-  /* ---------- Panel de teoría del paso actual ---------- */
-  function pintarLearn() {
-    const c = getCurrentComponent();
-
-    if (!c) {
-      learnPanel.innerHTML =
-        `<div class="learn-head">ENSAMBLAJE COMPLETO</div>
-         <div class="learn-body">
-           <p>Todos los pasos están cubiertos. Pulsa <strong>Encender PC</strong> para ejecutar el POST y verificar el equipo.</p>
-         </div>`;
-      bubble.innerHTML = `<span class="instr-ico">✅</span><span>Ensamblaje terminado. Ya puedes encender el equipo.</span>`;
-      return;
-    }
-
-    const specs = SPECS[c.id];
-    const tabla = specs
-      ? `<table class="spec-table"><tbody>${specs.map(r =>
-          `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}</tbody></table>`
-      : "";
-
-    learnPanel.innerHTML =
-      `<div class="learn-head">ANTES DE INSTALAR · PASO ${c.step}</div>
-       <h3>${c.name}</h3>
-       <div class="learn-body">
-         <p>${c.info}</p>
-         <p class="learn-where">📍 Va en: <strong>${SLOT_LABELS[c.target] || c.target}</strong></p>
-         ${tabla}
-       </div>`;
-
-    bubble.innerHTML =
-      `<span class="instr-ico">🛠️</span>
-       <span>${INSTRUCCIONES[c.id] || ("Coloca " + c.name + " en " + (SLOT_LABELS[c.target] || c.target) + ".")}</span>`;
-  }
-
-  /* ---------- Índice de categorías ---------- */
-  function pintarIndice() {
-    const actual = getCurrentComponentId();
-    catIndex.innerHTML = "";
-
-    CATEGORIAS.forEach(cat => {
-      // piezas reales de la categoría (descartando alternativas no usadas)
-      const piezas = cat.ids
-        .map(id => getComponent(id))
-        .filter(c => c && !(c.group && groupSatisfied(c.group) && !placed.has(c.id)));
-
-      if (!piezas.length) return;
-
-      const hechas = piezas.filter(c => placed.has(c.id)).length;
-      const completa = hechas === piezas.length;
-      const activa = piezas.some(c => c.id === actual);
-
-      const el = document.createElement("div");
-      el.className = "cat-item" + (completa ? " done" : "") + (activa ? " active" : "");
-      el.innerHTML =
-        `<span class="ci-dot">${completa ? "✓" : "•"}</span>
-         <span>${cat.n}</span>
-         <span style="margin-left:auto">${hechas}/${piezas.length}</span>`;
-      catIndex.appendChild(el);
-    });
-  }
-
-  /* ---------- Resaltado permanente del destino actual ---------- */
-  function marcarDestino() {
-    document.querySelectorAll(".slot.target-now").forEach(s => s.classList.remove("target-now"));
-    const c = getCurrentComponent();
-    if (!c) return;
-    const slot = getTargetSlot(c);
-    if (slot) slot.classList.add("target-now");
-  }
-
-  function refrescarContexto() {
-    pintarLearn();
-    pintarIndice();
-    marcarDestino();
-  }
-
-  /* ---------- Enganchar con el motor existente ---------- */
-  const _renderGuide = window.renderGuide;
-  window.renderGuide = function () {
-    _renderGuide();
-    refrescarContexto();
-  };
-
-  // Al seleccionar una pieza que aún no toca, el panel explica esa pieza
-  const _selectComponent = window.selectComponent;
-  window.selectComponent = function (id) {
-    _selectComponent(id);
-    const c = getComponent(id);
-    const actual = getCurrentComponentId();
-    if (!c || c.id === actual || placed.has(c.id)) { pintarLearn(); return; }
-
-    const specs = SPECS[c.id];
-    const tabla = specs
-      ? `<table class="spec-table"><tbody>${specs.map(r =>
-          `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}</tbody></table>`
-      : "";
-    const listo = depsMet(c);
-
-    learnPanel.innerHTML =
-      `<div class="learn-head">${listo ? "CONSULTA · PASO " + c.step : "AÚN NO TOCA · PASO " + c.step}</div>
-       <h3>${c.name}</h3>
-       <div class="learn-body">
-         <p>${c.info}</p>
-         <p class="learn-where">📍 Va en: <strong>${SLOT_LABELS[c.target] || c.target}</strong></p>
-         ${listo ? "" : `<p class="learn-where">🔒 ${nextPendingDepText(c)}</p>`}
-         ${tabla}
-       </div>`;
-  };
-
-  refrescarContexto();
 })();
