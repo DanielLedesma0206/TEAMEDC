@@ -764,7 +764,7 @@ h1 {
 .pc-case.exploded .slot.occupied .installed-component { filter: drop-shadow(0 24px 20px rgba(0,0,0,.55)); }
 
 /* ---- RGB / encendido ---- */
-.rgb-edge { position: absolute; inset: -5px; border-radius: 28px; pointer-events: none; background: conic-gradient(from 0deg,#00f0ff,#a855f7,#ff2d95,#52ffb8,#6bbdff,#00f0ff); filter: blur(12px); opacity: 0; z-index: -1; transition: opacity .8s ease; }
+/* .rgb-edge { position: absolute; inset: -5px; border-radius: 100px; pointer-events: none; background: conic-gradient(from 0deg,#00f0ff,#a855f7,#ff2d95,#52ffb8,#6bbdff,#00f0ff); filter: blur(12px); opacity: 0; z-index: -1; transition: opacity .8s ease; } */
 .pc-case.powered .rgb-edge { opacity: .75; animation: edgeSpin 6s linear infinite; }
 .pc-case.igniting .rgb-edge { opacity: 0.95; animation: edgeIgnite 1.2s ease; }
 .pc-case.powered { animation: rgbPulse 4s linear infinite; }
