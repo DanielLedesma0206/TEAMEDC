@@ -12,4 +12,5 @@ Vaaaaaaaaaaaaaaaaaaaaas pa fueraaaaaaaaaaaa weeeeeeeeeeeeeey
 # Arreglar ventilador abajo de procesador
 ---
 que componentes se le pueden cambiar a una laptop hoy en dia 
+
 que podemos ofrecer contra la competencia 
