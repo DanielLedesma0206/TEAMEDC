@@ -1,5 +1,5 @@
 /* =================================================================
-   PC BUILDER · SIMULADOR DE ENSAMBLAJE (sin mecánicas de juego)
+   PC BUILDER · SIMULADOR DE ENSAMBLAJE
    Gabinete ya armado · sin fases · refrigeración líquida + tornillos
    ================================================================= */
 
