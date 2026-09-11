@@ -416,7 +416,7 @@ h1 {
 .chip-1 { left: 105px; top: 430px; } .chip-2 { right: 55px; top: 270px; } .chip-3 { left: 510px; top: 480px; }
 
 .cmos-battery {
-  position: absolute; right: 30px; top: 300px; width: 40px; height: 40px; border-radius: 50%;
+  position: absolute; right: 60px; top: 370px; width: 40px; height: 40px; border-radius: 50%;
   background: radial-gradient(circle at 30% 24%, #fff, #c6d0dd 36%, #7b8796 70%, #424b58);
   border: 2px solid #1a2232; box-shadow: 0 6px 0 rgba(0,0,0,0.35);
 }
@@ -483,7 +483,7 @@ h1 {
 .psu-bay { left: 175px; bottom: 35px; width: 280px; height: 95px; }
 .hdd-bay { left: 30px; bottom: 40px; width: 110px; height: 110px; }
 .sata-bay { right: 28px; bottom: 110px; width: 110px; height: 62px; }
-.fan-front-slot { left: 28px; top: 130px; width: 92px; height: 250px; }
+.fan-front-slot { left: 28px; top: 40px; width: 92px; height: 470px; }
 .fan-rear-slot { right: 20px; top: 70px; width: 74px; height: 84px; }
 .pcie-power-slot { left: 905px; top: 520px; width: 80px; height: 42px; }
 .sata-power-slot { right: 25px; bottom: 60px; width: 100px; height: 38px; }
@@ -1096,8 +1096,7 @@ h1 {
 .quiz-result { text-align: center; padding: 26px 18px; }
 .quiz-result .score { font-size: 40px; font-weight: 800; color: var(--accent); }
 
-/* ---- Laboratorio de diagnóstico (versión anterior; ya NO la usa el JS,
-   se conserva por compatibilidad pero puede borrarse) ---- */
+/* ---- Laboratorio de diagnóstico ---- */
 .case-card.solved { border-color: rgba(82,255,184,0.5); }
 .case-symptom { color: #eaf0ff; font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
 .case-tag { display: inline-block; margin-right: 8px; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #04101f; background: #ffe66b; }
@@ -1231,127 +1230,3 @@ body.pb-home-active #homeRoot {
   .pb-cards { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) { .pb-cards { grid-template-columns: 1fr; } }
-
-/* =================================================================
-   ============   AÑADIDOS · MÓDULO DE DIAGNÓSTICO (POST)   ========
-   Estilos NUEVOS para el laboratorio de diagnóstico tal como lo
-   genera el JS actual (.diag-lab, .post-top, .post-body,
-   .post-result, .diag-opt...) y el recuadro ".clave" suelto.
-   Mismo estilo plano que el resto de módulos.
-   ================================================================= */
-
-/* Recuadro "idea clave" reutilizable (teoría, memoria, diagnóstico).
-   Acepta color propio por --accent en línea; si no, usa el global.
-   Dentro de .topic2 manda la regla anterior por ser más específica. */
-.clave {
-  padding: 11px 13px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: #eaf0ff;
-  background: rgba(126, 215, 255, 0.07);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-}
-
-/* Distribución: pantalla del equipo (izquierda) + preguntas (derecha) */
-.diag-lab {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: start;
-}
-@media (max-width: 1080px) {
-  .diag-lab { grid-template-columns: 1fr; }
-}
-
-/* Pantalla del equipo. El JS le pone también la clase .panel; aquí
-   quitamos su relleno para que el encabezado y la consola ocupen todo
-   el ancho. Esta regla va después de la .post-screen anterior, así que
-   manda esta. */
-.diag-lab .post-screen { padding: 0; overflow: hidden; margin-bottom: 0; }
-
-.post-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(126, 215, 255, 0.06);
-}
-.post-name {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.post-top .primary-btn { margin: 0; }
-
-.post-body {
-  padding: 14px 16px;
-  min-height: 150px;
-  max-height: 320px;
-  overflow-y: auto;
-  font-family: "Consolas", "Courier New", monospace;
-  font-size: 13px;
-  line-height: 1.7;
-  color: #cdd7f5;
-}
-.post-body::-webkit-scrollbar { width: 8px; }
-.post-body::-webkit-scrollbar-thumb { background: rgba(126, 215, 255, 0.35); border-radius: 99px; }
-
-/* Resultado del POST (síntoma detectado) */
-.post-result {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  margin-top: 12px;
-  padding: 12px 13px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  font-family: Arial, Helvetica, sans-serif;
-}
-.post-result.ok  { border-color: rgba(82, 255, 184, 0.5); background: rgba(82, 255, 184, 0.08); }
-.post-result.bad { border-color: rgba(255, 98, 98, 0.5);  background: rgba(255, 98, 98, 0.08); }
-.post-result strong { display: block; margin-bottom: 6px; color: #fff; font-size: 14px; }
-
-/* Lucecita de estado (verde = ok, roja = falla) */
-.post-blink {
-  flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  margin-top: 3px;
-  border-radius: 50%;
-  background: var(--accent-2);
-  box-shadow: 0 0 10px var(--accent-2);
-  animation: postBlink 1s ease-in-out infinite;
-}
-.post-blink.red { background: #ff6262; box-shadow: 0 0 10px #ff6262; }
-@keyframes postBlink { 50% { opacity: 0.25; } }
-
-/* Lista de síntomas (pantalla / pitidos / LED) */
-.post-signals { margin: 4px 0 0; padding: 0; list-style: none; }
-.post-signals li { color: #cdd7f5; font-size: 13px; line-height: 1.7; }
-
-/* Opciones de causa y de arreglo */
-.diag-opts { display: grid; gap: 8px; }
-.diag-opt {
-  text-align: left;
-  padding: 11px 13px;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #eaf0ff;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border);
-}
-.diag-opt:hover { border-color: var(--accent); }
-.diag-opt.correct { border-color: var(--accent-2); background: rgba(82, 255, 184, 0.1); color: #baffe4; }
-.diag-opt.wrong   { border-color: #ff6262;         background: rgba(255, 98, 98, 0.1);  color: #ff9b9b; }
-.diag-opt:disabled { pointer-events: none; opacity: 0.85; }
-
-/* Espacio del botón "Continuar" tras responder */
-#diagFb .view-btn { margin-top: 12px; }
