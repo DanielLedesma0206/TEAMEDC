@@ -1,5 +1,5 @@
 /* =================================================================
-   PC BUILDER · SIMULADOR DE ENSAMBLAJE
+   PC BUILDER · SIMULADOR DE ENSAMBLAJE (sin mecánicas de juego)
    Gabinete ya armado · sin fases · refrigeración líquida + tornillos
    ================================================================= */
 
@@ -1696,7 +1696,7 @@ initBuild();
       : { s: "bad", t: "Sin video: el CPU no tiene iGPU y no hay GPU.", w: "Sin fuente de video no hay imagen en pantalla." });
     groups.push({ title: "Requisitos de funcionamiento", checks: req });
 
-    // Cuello de botella
+    // Cuello de botella (informativo)
     const notes = [];
     if (gpu.present) {
       const diff = gpu.tier - cpu.tier;
@@ -1719,7 +1719,7 @@ initBuild();
   }
 
   /* =================================================================
-     MÓDULO 7 · AUTOEVALUACIÓN
+     MÓDULO 7 · AUTOEVALUACIÓN (ampliada)
      ================================================================= */
   const POOL = [
     { type: "mc", q: "¿Qué componente ejecuta las instrucciones del sistema?", opts: ["El procesador (CPU)", "La memoria RAM", "La fuente de poder", "El gabinete"], correct: 0, fb: "El CPU es el 'cerebro': ejecuta el ciclo de instrucción." },
@@ -1882,7 +1882,7 @@ initBuild();
   }
 
   /* =================================================================
-     MÓDULO 6 · GLOSARIO
+     MÓDULO 6 · GLOSARIO (buscable)
      ================================================================= */
   const GLOSSARY = [
     ["ALU", "Unidad Aritmético-Lógica: realiza operaciones aritméticas y lógicas dentro del CPU."],
@@ -1949,7 +1949,7 @@ initBuild();
 (function () {
   "use strict";
 
-  /* Inyecta la hoja de estilos del menú */
+  /* Inyecta la hoja de estilos del menú (así solo agregas 1 línea al HTML) */
   if (!document.querySelector('link[data-pb-home]')) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -1974,14 +1974,14 @@ initBuild();
       desc: "Consulta el glosario con los términos clave del hardware." }
   ];
 
-  /* Menú lateral */
+  /* Menú lateral (adaptado a lo que sí hace tu proyecto) */
   const MENU = [
-    /* { key: "inicio",      icon: "🏠", label: "Inicio" },
+    { key: "inicio",      icon: "🏠", label: "Inicio" },
     { key: "modEnsamble", icon: "🖥️", label: "Ensamblar" },
     { key: "modTeoria",   icon: "🎓", label: "Estudiar" },
     { key: "modQuiz",     icon: "📝", label: "Evaluación" },
     { key: "modGloss",    icon: "📚", label: "Glosario" },
-    { key: "config",      icon: "⚙️", label: "Configuración" } */
+    { key: "config",      icon: "⚙️", label: "Configuración" }
   ];
 
   function toast(msg) {
