@@ -1,311 +1,310 @@
-/* =================================================================
-   PC BUILDER · SIMULADOR DE ENSAMBLAJE
-   Gabinete ya armado · sin fases · refrigeración líquida + tornillos
-   ================================================================= */
+/* =====================================================================
+   PC BUILDER · SIMULADOR DE ENSAMBLAJE DE COMPUTADORAS
+   Proyecto de servicio social · versión comentada para estudiantes
+   =====================================================================
 
-/* dependsOn = piezas previas (string o array). Puede usar "group:NOMBRE".
-   group = grupo de elección: basta instalar UN miembro (p. ej. refrigeración). */
+   ¿QUÉ ES ESTE ARCHIVO?
+   Es toda la lógica (JavaScript) del simulador. El diseño (HTML/CSS) va
+   aparte; aquí solo se controla QUÉ pasa cuando el usuario interactúa.
+
+   ---------------------------------------------------------------------
+   GUÍA DE LECTURA  (el archivo está dividido en 3 grandes bloques)
+   ---------------------------------------------------------------------
+   BLOQUE 1 · ENSAMBLAJE (líneas de datos + motor del armado)
+     1. components .......... lista de las 38 piezas y sus textos.
+     2. Estado y referencias  variables globales + accesos al DOM.
+     3. initBuild / renderParts ... dibujar piezas y reiniciar.
+     4. Arrastrar y soltar .. mover la pieza y validar dónde se soltó.
+     5. installComponent .... "instalar" la pieza y su animación.
+     6. Guía / info / UI .... texto de ayuda y barra de progreso.
+     7. Explicación contextual  panel de teoría del paso actual.
+     8. Helpers ............. funciones cortas de apoyo (dependencias).
+     9. Sonido / cámara / encendido / eventos.
+
+   BLOQUE 2 · MÓDULOS DIDÁCTICOS  (una función 'renderX' por módulo)
+     · Módulo 1 Teoría   · Módulo 2 Catálogo · Módulo 4 Compatibilidad
+     · Módulo 5 Quiz     · Módulo 6 Glosario · Menú principal (tarjetas)
+
+   BLOQUE 3 · MÓDULO 3 Diagnóstico de errores (laboratorio de POST)
+
+   ---------------------------------------------------------------------
+   IDEAS CLAVE PARA ENTENDER EL CÓDIGO
+   ---------------------------------------------------------------------
+   · "placed" es un Set con los id de las piezas ya instaladas. Casi todo
+     (progreso, qué sigue, bloqueos) se calcula a partir de ese conjunto.
+   · Cada pieza dice de qué otras DEPENDE (dependsOn). Una pieza solo se
+     puede instalar si todas sus dependencias ya están en 'placed'.
+   · El HTML tiene "slots" (huecos) con data-target; cada pieza tiene un
+     'target'. Si el target de la pieza coincide con el del slot, va ahí.
+   · Todo se vuelve a dibujar llamando a renderParts()/renderGuide()/
+     updateUI() después de cada cambio: es más simple que editar a mano.
+
+   ORDEN DE EJECUCIÓN AL CARGAR:
+     setupOrbit() → applyTransform() → tickAuto() → runBoot() → initBuild()
+     y, al final, las dos IIFE de módulos + el menú principal.
+   ===================================================================== */
+
+/* Cada componente tiene:
+     id       identificador único
+     name     nombre visible
+     short    frase corta para la tarjeta
+     type     "tipo" que define su dibujo (clase CSS)
+     target   slot del HTML donde debe soltarse
+     dependsOn pieza(s) previa(s). Texto, lista, o "group:NOMBRE".
+     group    grupo de elección: basta instalar UN miembro (refrigeración).
+     info     explicación larga (teoría de la pieza)
+     wrong    mensaje si el usuario la suelta en el lugar equivocado */
 const components = [
-  {
-    id: "standoffs", step: 1, name: "Separadores (standoffs)",
+  { id: "standoffs", name: "Separadores (standoffs)",
     short: "Tornillos elevadores de la bandeja.", type: "standoffs", target: "standoffs",
     info: "Los separadores (standoffs) se atornillan en la bandeja del gabinete y elevan la placa madre para que no toque el metal y no haga cortocircuito. Van según el formato ATX.",
-    wrong: "Los separadores se atornillan en la bandeja del gabinete, no ahí. Marca primero los agujeros del formato ATX."
-  },
-  {
-    id: "mobo", step: 2, name: "Placa madre ATX",
-    short: "Se monta sobre los standoffs.", type: "mobo", target: "mobo-tray",
-    dependsOn: "standoffs",
+    wrong: "Los separadores se atornillan en la bandeja del gabinete, no ahí. Marca primero los agujeros del formato ATX." },
+
+  { id: "mobo", name: "Placa madre ATX",
+    short: "Se monta sobre los standoffs.", type: "mobo", target: "mobo-tray", dependsOn: "standoffs",
     info: "La placa madre se apoya sobre los separadores y se atornilla a la bandeja. Es la base donde se conectan todos los demás componentes.",
-    wrong: "La placa madre va sobre la bandeja, alineada con los separadores y el I/O shield trasero."
-  },
-  {
-    id: "screwMobo", step: 3, name: "Atornillar la placa madre",
-    short: "Fija la placa a los standoffs.", type: "screws", target: "mobo-tray",
-    dependsOn: "mobo",
+    wrong: "La placa madre va sobre la bandeja, alineada con los separadores y el I/O shield trasero." },
+
+  { id: "screwMobo", name: "Atornillar la placa madre",
+    short: "Fija la placa a los standoffs.", type: "screws", target: "mobo-tray", dependsOn: "mobo",
     info: "Con la placa apoyada sobre los separadores, atorníllala en cada agujero (sin apretar de más). Así queda fija y bien contactada a tierra.",
-    wrong: "Estos tornillos fijan la placa madre ya montada sobre la bandeja."
-  },
-  {
-    id: "cpu", step: 4, name: "Procesador (CPU)",
-    short: "Va en el socket central.", type: "cpu", target: "cpu-socket",
-    dependsOn: "mobo",
+    wrong: "Estos tornillos fijan la placa madre ya montada sobre la bandeja." },
+
+  { id: "cpu", name: "Procesador (CPU)",
+    short: "Va en el socket central.", type: "cpu", target: "cpu-socket", dependsOn: "mobo",
     info: "El CPU es el cerebro de la PC. Levanta la palanca del socket, alinea la flecha/triángulo dorado con el de la placa y déjalo caer por su propio peso. Nunca lo fuerces.",
-    wrong: "El procesador sólo entra en el socket central de la placa, alineando el triángulo dorado."
-  },
-  {
-    id: "paste", step: 5, name: "Pasta térmica",
-    short: "Un punto sobre el CPU.", type: "paste", target: "cpu-paste",
-    dependsOn: "cpu",
+    wrong: "El procesador sólo entra en el socket central de la placa, alineando el triángulo dorado." },
+
+  { id: "paste", name: "Pasta térmica",
+    short: "Un punto sobre el CPU.", type: "paste", target: "cpu-paste", dependsOn: "cpu",
     info: "La pasta térmica mejora la transferencia de calor entre el CPU y el disipador. Aplica un punto del tamaño de un guisante en el centro del procesador.",
-    wrong: "La pasta térmica se aplica encima del procesador ya instalado, no en otro lugar."
-  },
-  {
-    id: "cooler", step: 6, name: "Disipador de aire", group: "cooling",
-    short: "Opción A · enfría el CPU por aire.", type: "cooler", target: "cooler-mount",
-    dependsOn: "paste",
+    wrong: "La pasta térmica se aplica encima del procesador ya instalado, no en otro lugar." },
+
+  { id: "cooler", name: "Disipador de aire", group: "cooling",
+    short: "Opción A · enfría el CPU por aire.", type: "cooler", target: "cooler-mount", dependsOn: "paste",
     info: "OPCIÓN A (aire): el disipador se monta encima del CPU presionando sobre la pasta térmica y se fija con sus sujetadores. Conecta su ventilador al cabezal CPU_FAN. (También puedes elegir refrigeración líquida.)",
-    wrong: "El disipador de aire se monta encima del procesador, sobre la pasta térmica."
-  },
-  {
-    id: "aio", step: 6, name: "Refrigeración líquida (AIO)", group: "cooling",
-    short: "Opción B · bloque + radiador + tubos.", type: "aio", target: "cooler-mount",
-    dependsOn: "paste",
+    wrong: "El disipador de aire se monta encima del procesador, sobre la pasta térmica." },
+
+  { id: "aio", name: "Refrigeración líquida (AIO)", group: "cooling",
+    short: "Opción B · bloque + radiador + tubos.", type: "aio", target: "cooler-mount", dependsOn: "paste",
     info: "OPCIÓN B (líquida/AIO): el bloque con la bomba se monta encima del CPU (sobre la pasta) y el radiador con sus ventiladores se fija arriba o al frente del gabinete; los tubos llevan el líquido entre ambos. Elige aire O líquida, no las dos.",
-    wrong: "El bloque/bomba de la refrigeración líquida va encima del CPU (mismo lugar que el cooler)."
-  },
-  {
-    id: "cpuFan", step: 7, name: "Conectar ventilador (CPU_FAN)",
-    short: "Cable del disipador al pin CPU_FAN.", type: "cable-fan", target: "cpu-fan-header",
-    dependsOn: "group:cooling",
+    wrong: "El bloque/bomba de la refrigeración líquida va encima del CPU (mismo lugar que el cooler)." },
+
+  { id: "cpuFan", name: "Conectar ventilador (CPU_FAN)",
+    short: "Cable del disipador al pin CPU_FAN.", type: "cable-fan", target: "cpu-fan-header", dependsOn: "group:cooling",
     info: "El ventilador del disipador (o la bomba del AIO) se conecta al cabezal CPU_FAN de la placa, junto al socket. Así la placa controla las RPM y detecta la refrigeración al arrancar.",
-    wrong: "El conector del ventilador va en el cabezal CPU_FAN, junto al socket del procesador."
-  },
-  {
-    id: "ram1", step: 7, name: "Memoria RAM (A2)",
-    short: "Primer módulo.", type: "ram", target: "ram-slot-1",
-    dependsOn: "mobo",
+    wrong: "El conector del ventilador va en el cabezal CPU_FAN, junto al socket del procesador." },
+
+  { id: "ram1", name: "Memoria RAM (A2)",
+    short: "Primer módulo.", type: "ram", target: "ram-slot-1", dependsOn: "mobo",
     info: "La RAM guarda datos temporales. Abre los seguros, alinea la muesca y presiona hasta oír el clic en ambos extremos.",
-    wrong: "La memoria RAM sólo encaja en las ranuras largas verticales junto al CPU."
-  },
-  {
-    id: "ram2", step: 8, name: "Memoria RAM (B2)",
-    short: "Segundo módulo (dual channel).", type: "ram", target: "ram-slot-2",
-    dependsOn: "ram1",
+    wrong: "La memoria RAM sólo encaja en las ranuras largas verticales junto al CPU." },
+
+  { id: "ram2", name: "Memoria RAM (B2)",
+    short: "Segundo módulo (dual channel).", type: "ram", target: "ram-slot-2", dependsOn: "ram1",
     info: "Usar dos módulos en las ranuras A2/B2 activa el dual channel y mejora el ancho de banda.",
-    wrong: "El segundo módulo va en la otra ranura larga (B2) para activar dual channel."
-  },
-  {
-    id: "m2", step: 9, name: "SSD M.2 NVMe",
-    short: "Almacenamiento rápido en la placa.", type: "m2", target: "m2-slot",
-    dependsOn: "mobo",
+    wrong: "El segundo módulo va en la otra ranura larga (B2) para activar dual channel." },
+
+  { id: "m2", name: "SSD M.2 NVMe",
+    short: "Almacenamiento rápido en la placa.", type: "m2", target: "m2-slot", dependsOn: "mobo",
     info: "El SSD M.2 se inserta en ángulo en su ranura, se baja y se fija con un tornillo. Es el almacenamiento más rápido.",
-    wrong: "El SSD M.2 sólo entra en su ranura horizontal pequeña sobre la placa."
-  },
-  {
-    id: "psu", step: 10, name: "Fuente de poder (PSU)",
-    short: "Se coloca en el gabinete.", type: "psu", target: "psu-bay",
-    dependsOn: "mobo",
+    wrong: "El SSD M.2 sólo entra en su ranura horizontal pequeña sobre la placa." },
+
+  { id: "psu", name: "Fuente de poder (PSU)",
+    short: "Se coloca en el gabinete.", type: "psu", target: "psu-bay", dependsOn: "mobo",
     info: "La fuente de poder entrega energía a todo el sistema. Se coloca en su compartimento inferior del gabinete.",
-    wrong: "La fuente de poder va en su compartimento inferior del gabinete (PSU shroud)."
-  },
-  {
-    id: "screwPsu", step: 11, name: "Atornillar la fuente",
-    short: "Fija la PSU al chasis.", type: "screws", target: "psu-bay",
-    dependsOn: "psu",
+    wrong: "La fuente de poder va en su compartimento inferior del gabinete (PSU shroud)." },
+
+  { id: "screwPsu", name: "Atornillar la fuente",
+    short: "Fija la PSU al chasis.", type: "screws", target: "psu-bay", dependsOn: "psu",
     info: "La fuente se atornilla por la parte trasera del gabinete con 4 tornillos para que quede firme.",
-    wrong: "Estos tornillos fijan la fuente por la parte trasera del gabinete."
-  },
-  {
-    id: "ssd", step: 12, name: "SSD SATA 2.5\"",
-    short: "Unidad de 2.5 pulgadas.", type: "ssd", target: "sata-bay",
-    dependsOn: "psu",
+    wrong: "Estos tornillos fijan la fuente por la parte trasera del gabinete." },
+
+  { id: "ssd", name: "SSD SATA 2.5\"",
+    short: "Unidad de 2.5 pulgadas.", type: "ssd", target: "sata-bay", dependsOn: "psu",
     info: "El SSD SATA de 2.5\" se coloca en su bahía. Después se conecta con cable de datos SATA y alimentación SATA desde la fuente.",
-    wrong: "El SSD de 2.5\" va en la bahía pequeña de discos del gabinete."
-  },
-  {
-    id: "hdd", step: 13, name: "Disco duro 3.5\"",
-    short: "Almacenamiento mecánico.", type: "hdd", target: "hdd-bay",
-    dependsOn: "psu",
+    wrong: "El SSD de 2.5\" va en la bahía pequeña de discos del gabinete." },
+
+  { id: "hdd", name: "Disco duro 3.5\"",
+    short: "Almacenamiento mecánico.", type: "hdd", target: "hdd-bay", dependsOn: "psu",
     info: "El disco duro de 3.5\" se monta en la jaula de discos. Vibra, así que conviene atornillarlo bien. Usa cable de datos y alimentación SATA.",
-    wrong: "El disco duro de 3.5\" va en la bahía/jaula grande del gabinete."
-  },
-  {
-    id: "screwDrives", step: 14, name: "Atornillar los discos",
-    short: "Fija SSD y HDD en sus bahías.", type: "screws", target: "hdd-bay",
-    dependsOn: ["ssd", "hdd"],
+    wrong: "El disco duro de 3.5\" va en la bahía/jaula grande del gabinete." },
+
+  { id: "screwDrives", name: "Atornillar los discos",
+    short: "Fija SSD y HDD en sus bahías.", type: "screws", target: "hdd-bay", dependsOn: ["ssd", "hdd"],
     info: "Atornilla cada disco en su bahía para que no vibre ni se mueva. El HDD especialmente, porque tiene partes móviles.",
-    wrong: "Estos tornillos fijan los discos en sus bahías del gabinete."
-  },
-  {
-    id: "gpu", step: 15, name: "Tarjeta gráfica (GPU)",
-    short: "Va en el PCIe x16.", type: "gpu", target: "pcie-slot",
-    dependsOn: "mobo",
+    wrong: "Estos tornillos fijan los discos en sus bahías del gabinete." },
+
+  { id: "gpu", name: "Tarjeta gráfica (GPU)",
+    short: "Va en el PCIe x16.", type: "gpu", target: "pcie-slot", dependsOn: "mobo",
     info: "La GPU se inserta en la ranura PCIe x16 superior hasta oír el clic del seguro. Procesa gráficos y videojuegos.",
-    wrong: "La tarjeta gráfica sólo encaja en la ranura larga PCIe x16."
-  },
-  {
-    id: "screwGpu", step: 16, name: "Atornillar la GPU",
-    short: "Fija la GPU al chasis.", type: "screws", target: "pcie-slot",
-    dependsOn: "gpu",
+    wrong: "La tarjeta gráfica sólo encaja en la ranura larga PCIe x16." },
+
+  { id: "screwGpu", name: "Atornillar la GPU",
+    short: "Fija la GPU al chasis.", type: "screws", target: "pcie-slot", dependsOn: "gpu",
     info: "Una vez encajada en el PCIe, atornilla la GPU al chasis por su bracket para que no cuelgue ni se afloje.",
-    wrong: "Este tornillo fija la tarjeta gráfica al chasis, sobre su bracket."
-  },
-  {
-    id: "fanFront", step: 17, name: "Ventilador frontal",
-    short: "Entrada de aire (intake).", type: "fan", target: "fan-front",
-    dependsOn: "mobo",
+    wrong: "Este tornillo fija la tarjeta gráfica al chasis, sobre su bracket." },
+
+  { id: "fanFront", name: "Ventilador frontal",
+    short: "Entrada de aire (intake).", type: "fan", target: "fan-front", dependsOn: "mobo",
     info: "El ventilador frontal empuja aire fresco hacia dentro (intake). Fíjate en la flecha de dirección y conéctalo a un cabezal SYS_FAN.",
-    wrong: "Este ventilador va en el frente del gabinete, como entrada de aire."
-  },
-  {
-    id: "fanRear", step: 18, name: "Ventilador trasero",
-    short: "Salida de aire (exhaust).", type: "fan", target: "fan-rear",
-    dependsOn: "mobo",
+    wrong: "Este ventilador va en el frente del gabinete, como entrada de aire." },
+
+  { id: "fanRear", name: "Ventilador trasero",
+    short: "Salida de aire (exhaust).", type: "fan", target: "fan-rear", dependsOn: "mobo",
     info: "El ventilador trasero expulsa el aire caliente (exhaust). Junto con el frontal crea un flujo frontal→trasero.",
-    wrong: "Este ventilador va en la parte trasera del gabinete, como salida de aire."
-  },
-  {
-    id: "screwFans", step: 19, name: "Atornillar los ventiladores",
-    short: "Fija los ventiladores al gabinete.", type: "screws", target: "fan-front",
-    dependsOn: ["fanFront", "fanRear"],
+    wrong: "Este ventilador va en la parte trasera del gabinete, como salida de aire." },
+
+  { id: "screwFans", name: "Atornillar los ventiladores",
+    short: "Fija los ventiladores al gabinete.", type: "screws", target: "fan-front", dependsOn: ["fanFront", "fanRear"],
     info: "Cada ventilador se fija con 4 tornillos largos al gabinete para que no vibre.",
-    wrong: "Estos tornillos fijan los ventiladores al gabinete."
-  },
-  {
-    id: "eps", step: 20, name: "Cable EPS CPU (8-pin)",
-    short: "Alimenta el procesador.", type: "cable-eps", target: "eps-header",
-    dependsOn: "psu",
+    wrong: "Estos tornillos fijan los ventiladores al gabinete." },
+
+  { id: "eps", name: "Cable EPS CPU (8-pin)",
+    short: "Alimenta el procesador.", type: "cable-eps", target: "eps-header", dependsOn: "psu",
     info: "El conector EPS de 8 pines alimenta al CPU. Va en el cabezal de la esquina superior izquierda de la placa, cerca del VRM.",
-    wrong: "El cable EPS de 8 pines del CPU va en el cabezal superior izquierdo de la placa."
-  },
-  {
-    id: "atx", step: 21, name: "Cable ATX 24-pin",
-    short: "Alimenta la placa madre.", type: "cable-atx", target: "atx-header",
-    dependsOn: "psu",
+    wrong: "El cable EPS de 8 pines del CPU va en el cabezal superior izquierdo de la placa." },
+
+  { id: "atx", name: "Cable ATX 24-pin",
+    short: "Alimenta la placa madre.", type: "cable-atx", target: "atx-header", dependsOn: "psu",
     info: "El conector ATX de 24 pines es la alimentación principal de la placa. Va en el cabezal vertical del borde derecho.",
-    wrong: "El cable ATX de 24 pines va en el conector vertical grande del borde derecho de la placa."
-  },
-  {
-    id: "pcie", step: 22, name: "Cable PCIe (GPU)",
-    short: "Energía extra para la GPU.", type: "cable-pcie", target: "pcie-power",
-    dependsOn: ["gpu", "psu"],
+    wrong: "El cable ATX de 24 pines va en el conector vertical grande del borde derecho de la placa." },
+
+  { id: "pcie", name: "Cable PCIe (GPU)",
+    short: "Energía extra para la GPU.", type: "cable-pcie", target: "pcie-power", dependsOn: ["gpu", "psu"],
     info: "El cable PCIe (6+2 pines) entrega energía adicional a la tarjeta gráfica desde la fuente.",
-    wrong: "El cable PCIe alimenta la GPU; va en los conectores de energía de la tarjeta gráfica."
-  },
-  {
-    id: "sataData", step: 23, name: "Cable SATA de datos",
-    short: "Conecta el disco a la placa.", type: "cable-sata-data", target: "sata-data",
-    dependsOn: "ssd",
+    wrong: "El cable PCIe alimenta la GPU; va en los conectores de energía de la tarjeta gráfica." },
+
+  { id: "sataData", name: "Cable SATA de datos",
+    short: "Conecta el disco a la placa.", type: "cable-sata-data", target: "sata-data", dependsOn: "ssd",
     info: "El cable plano SATA lleva los datos del disco a un puerto SATA de la placa madre.",
-    wrong: "El cable de datos SATA conecta el disco con un puerto SATA de la placa."
-  },
-  {
-    id: "sataPower", step: 24, name: "Cable SATA de poder",
-    short: "Alimenta los discos.", type: "cable-sata-power", target: "sata-power",
-    dependsOn: ["ssd", "psu"],
+    wrong: "El cable de datos SATA conecta el disco con un puerto SATA de la placa." },
+
+  { id: "sataPower", name: "Cable SATA de poder",
+    short: "Alimenta los discos.", type: "cable-sata-power", target: "sata-power", dependsOn: ["ssd", "psu"],
     info: "El conector de alimentación SATA viene de la fuente y entrega energía a los discos SATA.",
-    wrong: "El cable de alimentación SATA va de la fuente hacia los discos."
-  },
-  {
-    id: "pwrSw", step: 25, name: "Power SW (F_PANEL)",
-    short: "Botón de encendido del gabinete.", type: "fp-pin", target: "fp-pwr-sw",
-    dependsOn: "mobo",
+    wrong: "El cable de alimentación SATA va de la fuente hacia los discos." },
+
+  { id: "pwrSw", name: "Power SW (F_PANEL)",
+    short: "Botón de encendido del gabinete.", type: "fp-pin", target: "fp-pwr-sw", dependsOn: "mobo",
     info: "Power SW conecta el botón de encendido del gabinete al cabezal F_PANEL. Es un interruptor: no tiene polaridad, cualquier orientación funciona.",
-    wrong: "El Power SW va en su par de pines del cabezal F_PANEL (esquina inferior de la placa)."
-  },
-  {
-    id: "rstSw", step: 26, name: "Reset SW (F_PANEL)",
-    short: "Botón de reinicio.", type: "fp-pin", target: "fp-rst-sw",
-    dependsOn: "mobo",
+    wrong: "El Power SW va en su par de pines del cabezal F_PANEL (esquina inferior de la placa)." },
+
+  { id: "rstSw", name: "Reset SW (F_PANEL)",
+    short: "Botón de reinicio.", type: "fp-pin", target: "fp-rst-sw", dependsOn: "mobo",
     info: "Reset SW conecta el botón de reinicio del gabinete. También es un interruptor, sin polaridad.",
-    wrong: "El Reset SW va en su par de pines del cabezal F_PANEL."
-  },
-  {
-    id: "hddLed", step: 27, name: "HDD LED (F_PANEL) +/−",
-    short: "LED de actividad del disco (con polaridad).", type: "fp-pin", target: "fp-hdd-led",
-    dependsOn: "mobo",
+    wrong: "El Reset SW va en su par de pines del cabezal F_PANEL." },
+
+  { id: "hddLed", name: "HDD LED (F_PANEL) +/−",
+    short: "LED de actividad del disco (con polaridad).", type: "fp-pin", target: "fp-hdd-led", dependsOn: "mobo",
     info: "HDD LED se enciende al leer/escribir en los discos. Es un LED: SÍ tiene polaridad; el pin + (positivo, cable de color) debe ir en su sitio o no encenderá.",
-    wrong: "El HDD LED va en su par de pines del F_PANEL respetando la polaridad (+/−)."
-  },
-  {
-    id: "pwrLed", step: 28, name: "Power LED (F_PANEL) +/−",
-    short: "LED de encendido (con polaridad).", type: "fp-pin", target: "fp-pwr-led",
-    dependsOn: "mobo",
+    wrong: "El HDD LED va en su par de pines del F_PANEL respetando la polaridad (+/−)." },
+
+  { id: "pwrLed", name: "Power LED (F_PANEL) +/−",
+    short: "LED de encendido (con polaridad).", type: "fp-pin", target: "fp-pwr-led", dependsOn: "mobo",
     info: "Power LED indica que la PC está encendida. También es un LED con polaridad: respeta el pin + (positivo).",
-    wrong: "El Power LED va en su par de pines del F_PANEL respetando la polaridad (+/−)."
-  },
-  {
-    id: "usbFront", step: 26, name: "USB frontal",
-    short: "Cabezal USB del gabinete.", type: "usbf", target: "usb-header",
-    dependsOn: "mobo",
+    wrong: "El Power LED va en su par de pines del F_PANEL respetando la polaridad (+/−)." },
+
+  { id: "usbFront", name: "USB frontal",
+    short: "Cabezal USB del gabinete.", type: "usbf", target: "usb-header", dependsOn: "mobo",
     info: "El cable de USB frontal del gabinete se conecta a su cabezal USB en la placa (USB 2.0, 3.0 de 19 pines o USB-C).",
-    wrong: "El USB frontal va al cabezal USB de la placa, no ahí."
-  },
-  {
-    id: "audioFront", step: 27, name: "Audio frontal",
-    short: "Cabezal HD Audio (AAFP).", type: "audiof", target: "audio-header",
-    dependsOn: "mobo",
+    wrong: "El USB frontal va al cabezal USB de la placa, no ahí." },
+
+  { id: "audioFront", name: "Audio frontal",
+    short: "Cabezal HD Audio (AAFP).", type: "audiof", target: "audio-header", dependsOn: "mobo",
     info: "El cable de audio frontal se conecta al cabezal HD Audio (AAFP), normalmente en la esquina inferior izquierda de la placa.",
-    wrong: "El audio frontal va al cabezal HD Audio (AAFP) de la placa."
-  },
-  {
-    id: "manage", step: 28, name: "Administrar cableado",
-    short: "Ordena los cables por detrás.", type: "manage", target: "cable-route",
-    dependsOn: ["atx", "eps", "sataPower"],
+    wrong: "El audio frontal va al cabezal HD Audio (AAFP) de la placa." },
+
+  { id: "manage", name: "Administrar cableado",
+    short: "Ordena los cables por detrás.", type: "manage", target: "cable-route", dependsOn: ["atx", "eps", "sataPower"],
     info: "Pasa los cables por detrás de la bandeja y sujétalos con cinchos. Un buen cable management mejora el flujo de aire y la estética antes de cerrar.",
-    wrong: "El cable management se hace por detrás de la bandeja, organizando todos los cables."
-  },
-  {
-    id: "sidePanel", step: 29, name: "Panel lateral",
-    short: "Coloca el panel del gabinete.", type: "sidepanel", target: "case-close",
-    dependsOn: "manage",
+    wrong: "El cable management se hace por detrás de la bandeja, organizando todos los cables." },
+
+  { id: "sidePanel", name: "Panel lateral",
+    short: "Coloca el panel del gabinete.", type: "sidepanel", target: "case-close", dependsOn: "manage",
     info: "Con todo conectado y ordenado, coloca el panel lateral en su sitio.",
-    wrong: "El panel lateral se coloca al final, cuando ya está todo conectado y ordenado."
-  },
-  {
-    id: "screwPanel", step: 30, name: "Atornillar el panel lateral",
-    short: "Cierre final del gabinete.", type: "screws", target: "case-close",
-    dependsOn: "sidePanel",
+    wrong: "El panel lateral se coloca al final, cuando ya está todo conectado y ordenado." },
+
+  { id: "screwPanel", name: "Atornillar el panel lateral",
+    short: "Cierre final del gabinete.", type: "screws", target: "case-close", dependsOn: "sidePanel",
     info: "Atornilla el panel lateral para cerrar el gabinete. ¡La PC está lista para encender!",
-    wrong: "Estos tornillos cierran y fijan el panel lateral del gabinete."
-  }
+    wrong: "Estos tornillos cierran y fijan el panel lateral del gabinete." },
+
+  /* ---------- Periféricos (antes iban en un módulo aparte) ---------- */
+  { id: "keyboard", name: "Teclado",
+    short: "Dispositivo de entrada · USB.", type: "keyboard", target: "usb-rear", dependsOn: "screwPanel",
+    info: "El teclado es un dispositivo de ENTRADA: convierte tus pulsaciones en datos que el CPU procesa. Se conecta a cualquier puerto USB del panel trasero (o frontal). No necesita controladores especiales para funcionar en el arranque.",
+    wrong: "El teclado se conecta a un puerto USB del panel trasero del gabinete." },
+
+  { id: "mouse", name: "Mouse",
+    short: "Dispositivo de entrada · USB.", type: "mouse", target: "usb-rear-2", dependsOn: "keyboard",
+    info: "El mouse también es un dispositivo de ENTRADA. Se conecta a otro puerto USB libre del panel trasero. Junto con el teclado permite operar el sistema desde el primer arranque.",
+    wrong: "El mouse se conecta a otro puerto USB libre del panel trasero." },
+
+  { id: "monitor", name: "Monitor",
+    short: "Salida de video · ¡cuidado dónde lo conectas!", type: "monitor", target: "video-gpu", dependsOn: ["mouse", "gpu"],
+    info: "El monitor es un dispositivo de SALIDA. Como este equipo tiene tarjeta gráfica dedicada, el cable debe ir a una salida de la GPU (parte baja del panel trasero). Si se conecta al puerto de video de la placa madre, el monitor no recibirá señal.",
+    wrong: "El monitor va conectado a una salida de video de la tarjeta gráfica, en la parte baja del panel trasero." }
 ];
 
-/* Numeración automática de pasos (miembros de un mismo grupo comparten número).
-   Permite insertar o dividir componentes sin renumerar a mano (modularidad). */
+/* Numeración automática de pasos (los del mismo grupo comparten número). */
 (function () {
-  let s = 0; const g = {};
+  let n = 0; const grupos = {};
   components.forEach(c => {
-    if (c.group) { if (g[c.group] == null) { s++; g[c.group] = s; } c.step = g[c.group]; }
-    else { s++; c.step = s; }
+    if (c.group) { if (grupos[c.group] == null) grupos[c.group] = ++n; c.step = grupos[c.group]; }
+    else c.step = ++n;
   });
 })();
 
-/* ---------- Estado ---------- */
+/* ---------- Estado del ensamble ---------- */
 let selectedId = null;
 let placed = new Set();
 
 /* ---------- Referencias del DOM ---------- */
-const partsList = document.getElementById("partsList");
+const partsList     = document.getElementById("partsList");
 const progressLabel = document.getElementById("progressLabel");
-const progressBar = document.getElementById("progressBar");
-const phaseText = document.getElementById("phaseText");
-const infoBox = document.getElementById("componentInfo");
-const stepGuide = document.getElementById("stepGuide");
-const highlightBtn = document.getElementById("highlightBtn");
-const resetBtn = document.getElementById("resetBtn");
-const toast = document.getElementById("toast");
+const progressBar   = document.getElementById("progressBar");
+const phaseText     = document.getElementById("phaseText");
+const infoBox       = document.getElementById("componentInfo");
+const stepGuide     = document.getElementById("stepGuide");
+const highlightBtn  = document.getElementById("highlightBtn");
+const resetBtn      = document.getElementById("resetBtn");
+const toast         = document.getElementById("toast");
 
-const pcCase = document.getElementById("pcCase");
-const motherboard = document.getElementById("motherboard");
-const boardScene = document.getElementById("boardScene");
-const powerBtn = document.getElementById("powerBtn");
-const poweredBadge = document.getElementById("poweredBadge");
-const autoBtn = document.getElementById("autoBtn");
-const layersBtn = document.getElementById("layersBtn");
-const centerBtn = document.getElementById("centerBtn");
-const soundBtn = document.getElementById("soundBtn");
-const confettiCanvas = document.getElementById("confetti");
-const bootScreen = document.getElementById("bootScreen");
-const bootFill = document.getElementById("bootFill");
-const bootLog = document.getElementById("bootLog");
-const sidePanelGlass = document.getElementById("sidePanelGlass");
+const pcCase        = document.getElementById("pcCase");
+const motherboard   = document.getElementById("motherboard");
+const boardScene    = document.getElementById("boardScene");
+const powerBtn      = document.getElementById("powerBtn");
+const poweredBadge  = document.getElementById("poweredBadge");
+const autoBtn       = document.getElementById("autoBtn");
+const layersBtn     = document.getElementById("layersBtn");
+const centerBtn     = document.getElementById("centerBtn");
+const soundBtn      = document.getElementById("soundBtn");
+const confettiCanvas= document.getElementById("confetti");
+const bootScreen    = document.getElementById("bootScreen");
+const bootFill      = document.getElementById("bootFill");
+const bootLog       = document.getElementById("bootLog");
+const sidePanelGlass= document.getElementById("sidePanelGlass");
 
 const errorModal = document.getElementById("errorModal");
 const errorTitle = document.getElementById("errorTitle");
-const errorBody = document.getElementById("errorBody");
+const errorBody  = document.getElementById("errorBody");
 const errorClose = document.getElementById("errorClose");
 
-const specModal = document.getElementById("specModal");
-const specTitle = document.getElementById("specTitle");
-const specRole = document.getElementById("specRole");
-const specBody = document.getElementById("specBody");
-const specExtra = document.getElementById("specExtra");
+const specModal  = document.getElementById("specModal");
+const specTitle  = document.getElementById("specTitle");
+const specRole   = document.getElementById("specRole");
+const specBody   = document.getElementById("specBody");
+const specExtra  = document.getElementById("specExtra");
 const specVisual = document.getElementById("specVisual");
-const specClose = document.getElementById("specClose");
+const specClose  = document.getElementById("specClose");
 
-/* Etiquetas de los slots */
+/* Elementos del panel de explicación contextual (pueden no existir) */
+const learnPanel = document.getElementById("learnPanel");
+const bubble     = document.getElementById("instructionBubble");
+const catIndex   = document.getElementById("catIndex");
+
+/* ---------- Etiquetas de cada slot ---------- */
 const SLOT_LABELS = {
   "standoffs": "STANDOFFS", "mobo-tray": "PLACA MADRE",
   "cpu-socket": "CPU SOCKET", "cpu-paste": "PASTA", "cooler-mount": "COOLER",
@@ -314,26 +313,25 @@ const SLOT_LABELS = {
   "sata-bay": "BAHÍA 2.5\"", "hdd-bay": "BAHÍA 3.5\"",
   "fan-front": "VENT. FRONTAL", "fan-rear": "VENT. TRASERO",
   "eps-header": "EPS 8-PIN", "atx-header": "24-PIN", "pcie-power": "PCIe PWR",
-  "sata-data": "SATA DATOS", "sata-power": "SATA PWR",
-  "cpu-fan-header": "CPU_FAN",
+  "sata-data": "SATA DATOS", "sata-power": "SATA PWR", "cpu-fan-header": "CPU_FAN",
   "fp-pwr-sw": "POWER SW", "fp-rst-sw": "RESET SW",
   "fp-hdd-led": "HDD LED +/−", "fp-pwr-led": "POWER LED +/−",
   "usb-header": "USB FRONTAL", "audio-header": "AUDIO FRONTAL",
-  "cable-route": "ORGANIZAR CABLES", "case-close": "PANEL LATERAL"
+  "cable-route": "ORGANIZAR CABLES", "case-close": "PANEL LATERAL",
+  "usb-rear": "USB 1", "usb-rear-2": "USB 2", "video-gpu": "VIDEO GPU", "video-mobo": "VIDEO PLACA"
 };
 
+/* Qué pieza pertenece a cada slot (para avisar cuando se equivocan de lugar) */
 const TARGET_TO_NAME = {};
 components.forEach(c => { if (!TARGET_TO_NAME[c.target]) TARGET_TO_NAME[c.target] = c.name; });
 
-/* Dato extra sobre el chipset de la placa (X570) — se muestra como apunte
-   en la ficha de la placa madre y del procesador, sin cambiar el resto. */
+/* Dato extra del chipset, se muestra en la ficha de placa y CPU */
 const CHIPSET = {
   name: "AMD X570",
   note: "Dato extra — Chipset AMD X570: es el 'centro de comunicaciones' de la placa. Gestiona las líneas PCIe 4.0 (para GPU y SSD M.2 de alta velocidad), los puertos SATA y USB, y permite overclocking en CPUs Ryzen con socket AM4. Un chipset superior ofrece más líneas PCIe y conectividad; uno básico (como A520/B550) recorta algunas."
 };
 
-/* Ficha técnica de cada pieza (datos reales orientativos, con fines educativos).
-   Cada entrada es una lista de pares [etiqueta, valor]. */
+/* ---------- Ficha técnica de cada pieza (pares [etiqueta, valor]) ---------- */
 const SPECS = {
   standoffs: [["Material", "Latón niquelado"], ["Rosca", "#6-32 / M3"], ["Altura", "~6 mm"], ["Función", "Aislar y elevar la placa"]],
   mobo: [["Formato", "ATX"], ["Socket", "AM4"], ["Chipset", "X570"], ["Memoria", "4× DDR4 (dual channel)"], ["Expansión", "PCIe 4.0 x16"]],
@@ -363,20 +361,18 @@ const SPECS = {
   usbFront: [["Cabezal", "USB frontal"], ["Estándar", "USB 3.0 (19-pin) / USB-C"], ["Origen", "Panel del gabinete"]],
   audioFront: [["Cabezal", "HD Audio (AAFP)"], ["Función", "Audio del panel frontal"], ["Posición", "Inferior izquierda"]],
   manage: [["Tarea", "Cable management"], ["Dónde", "Detrás de la bandeja"], ["Beneficio", "Mejor flujo de aire y estética"]],
-  sidePanel: [["Pieza", "Panel lateral"], ["Material", "Cristal templado"], ["Cierre", "Tornillos de mano"]]
+  sidePanel: [["Pieza", "Panel lateral"], ["Material", "Cristal templado"], ["Cierre", "Tornillos de mano"]],
+  keyboard: [["Tipo", "Dispositivo de entrada"], ["Interfaz", "USB / inalámbrico"], ["Formato", "104 teclas"], ["Función", "Introducir datos y comandos"]],
+  mouse: [["Tipo", "Dispositivo de entrada"], ["Interfaz", "USB / inalámbrico"], ["Sensor", "Óptico 1600 DPI"], ["Función", "Señalar y seleccionar"]],
+  monitor: [["Tipo", "Dispositivo de salida"], ["Conexión", "HDMI / DisplayPort"], ["Resolución", "1920×1080"], ["Se conecta a", "La GPU dedicada, no a la placa"]]
 };
 
-/* ---------- Cámara / vista ---------- */
+/* ---------- Cámara / vista 3D ---------- */
 const PRESETS = {
-  iso:   [57, -33, 0.62],
-  top:   [0,   0,  0.68],
-  left:  [55, -62, 0.60],
-  right: [55, -10, 0.60],
-  rear:  [55, 150, 0.60],
-  internal: [22, -33, 0.78]
+  iso: [57, -33, 0.62], top: [0, 0, 0.68], left: [55, -62, 0.60],
+  right: [55, -10, 0.60], rear: [55, 150, 0.60], internal: [22, -33, 0.78]
 };
-let rotX = 57, rotZ = -33, zoom = 0.62;
-let panX = -200, panY = 0;
+let rotX = 57, rotZ = -33, zoom = 0.62, panX = -200, panY = 0;
 let autoOn = false, exploded = false, draggingBoard = false, panningBoard = false;
 if (window.innerWidth <= 1220) zoom = 0.5;
 if (window.innerWidth <= 720) zoom = 0.42;
@@ -406,10 +402,8 @@ function initBuild() {
     const t = slot.dataset.target;
     slot.innerHTML = `<span>${SLOT_LABELS[t] || t}</span>`;
     delete slot.dataset.installedId;
-    slot.classList.remove(
-      "correct-flash", "wrong-flash", "next-step",
-      "drop-ready", "drop-wrong", "occupied", "installing", "screwed", "inspecting"
-    );
+    slot.classList.remove("correct-flash", "wrong-flash", "next-step",
+      "drop-ready", "drop-wrong", "occupied", "installing", "screwed", "inspecting");
   });
 
   renderParts();
@@ -420,7 +414,7 @@ function initBuild() {
 }
 
 /* =================================================================
-   PIEZAS DISPONIBLES
+   PIEZAS DISPONIBLES (columna de tarjetas)
    ================================================================= */
 function renderParts() {
   partsList.innerHTML = "";
@@ -462,27 +456,28 @@ function renderParts() {
   });
 }
 
+/* Devuelve el "dibujo" de cada tipo de pieza (una clase CSS). */
 function createVisual(type) {
-  const el = document.createElement("div");
-  const classes = {
-    standoffs: "standoffs-visual", mobo: "mobo-visual",
-    cpu: "cpu-visual", paste: "paste-visual", cooler: "cooler-visual", aio: "aio-visual",
+  const clases = {
+    standoffs: "standoffs-visual", mobo: "mobo-visual", cpu: "cpu-visual",
+    paste: "paste-visual", cooler: "cooler-visual", aio: "aio-visual",
     ram: "ram-visual", m2: "m2-visual", psu: "psu-visual",
     ssd: "ssd-visual", hdd: "hdd-visual", gpu: "gpu-visual", fan: "fan-visual",
     screws: "screws-visual",
     "cable-eps": "cable-eps-visual", "cable-atx": "cable-atx-visual",
     "cable-pcie": "cable-pcie-visual", "cable-sata-data": "cable-sata-data-visual",
     "cable-sata-power": "cable-sata-power-visual", manage: "cable-sata-power-visual",
-    fp: "fp-visual", "fp-pin": "fp-pin-visual", "cable-fan": "cable-fan-visual",
-    usbf: "usbf-visual", audiof: "audiof-visual",
-    sidepanel: "sidepanel-visual", battery: "battery-visual"
+    "fp-pin": "fp-pin-visual", "cable-fan": "cable-fan-visual",
+    usbf: "usbf-visual", audiof: "audiof-visual", sidepanel: "sidepanel-visual",
+    monitor: "monitor-visual", keyboard: "keyboard-visual", mouse: "mouse-visual"
   };
-  el.className = classes[type] || "ssd-visual";
+  const el = document.createElement("div");
+  el.className = clases[type] || "ssd-visual";
   return el;
 }
 
 /* =================================================================
-   DRAG & DROP
+   ARRASTRAR Y SOLTAR
    ================================================================= */
 function startDrag(event, componentId, card) {
   const component = getComponent(componentId);
@@ -528,18 +523,23 @@ function startDrag(event, componentId, card) {
   document.addEventListener("pointerup", onUp);
 }
 
-function moveGhost(ghost, x, y) {
-  ghost.style.left = x + "px";
-  ghost.style.top = y + "px";
-}
+function moveGhost(ghost, x, y) { ghost.style.left = x + "px"; ghost.style.top = y + "px"; }
 
 function checkDrop(component, x, y) {
+  // Trampa didáctica del monitor: si lo sueltan en el video de la PLACA (teniendo GPU)
+  if (component.id === "monitor" && depsMet(component)) {
+    const trampa = document.querySelector('.slot[data-target="video-mobo"]');
+    if (trampa && isPointInsideSlot(x, y, trampa, 34)) {
+      flashWrong(trampa);
+      showError("Ese puerto no dará imagen",
+        "Conectaste el monitor al puerto de video de la placa madre. Como el equipo tiene una tarjeta gráfica dedicada, la placa desactiva su salida y toda la imagen pasa por la GPU: el monitor se quedaría en negro con el aviso «sin señal». Los puertos de video de la placa solo funcionan cuando el procesador tiene gráficos integrados. Conecta el cable a una salida de la tarjeta gráfica, en la parte baja del panel trasero.");
+      return;
+    }
+  }
+
   const targetSlot = getTargetSlot(component);
 
-  if (!depsMet(component)) {
-    showError("Falta un paso previo", nextPendingDepText(component));
-    return;
-  }
+  if (!depsMet(component)) { showError("Falta un paso previo", nextPendingDepText(component)); return; }
 
   if (targetSlot && isPointInsideSlot(x, y, targetSlot, getTolerance(component))) {
     installComponent(component, targetSlot);
@@ -552,9 +552,7 @@ function checkDrop(component, x, y) {
     const nt = nearest.dataset.target;
     const belongsTo = TARGET_TO_NAME[nt];
     let extra = "";
-    if (belongsTo && belongsTo !== component.name) {
-      extra = ` Ese lugar (${SLOT_LABELS[nt] || nt}) es para: ${belongsTo}.`;
-    }
+    if (belongsTo && belongsTo !== component.name) extra = ` Ese lugar (${SLOT_LABELS[nt] || nt}) es para: ${belongsTo}.`;
     showError("Esa pieza no va ahí", component.wrong + extra);
   } else {
     showError("Fuera de lugar", component.wrong + " Acerca el centro de la pieza al slot correcto resaltado.");
@@ -565,23 +563,31 @@ function getTargetSlot(component) {
   return document.querySelector(`.slot[data-target="${component.target}"]`);
 }
 
+/* Margen de acierto al soltar (los periféricos son finos porque los puertos están juntos) */
 function getTolerance(component) {
   const tol = {
     standoffs: 90, mobo: 90, cpu: 55, paste: 50, cooler: 75, aio: 75,
     ram: 75, m2: 60, gpu: 75, psu: 75, ssd: 65, hdd: 70, fan: 75, screws: 70,
     "cable-eps": 60, "cable-atx": 60, "cable-pcie": 60,
     "cable-sata-data": 60, "cable-sata-power": 60,
-    fp: 55, "fp-pin": 46, "cable-fan": 50, usbf: 55, audiof: 55, manage: 80, sidepanel: 100
+    "fp-pin": 46, "cable-fan": 50, usbf: 55, audiof: 55, manage: 80, sidepanel: 100,
+    monitor: 30, keyboard: 30, mouse: 30
   };
   return tol[component.type] || 65;
 }
 
+/* ¿El punto (x,y) donde solté cae dentro (o cerca) del slot?
+   Tomamos el rectángulo del slot en pantalla y le sumamos un margen
+   ('tolerance') para que no haya que apuntar con precisión perfecta. */
 function isPointInsideSlot(x, y, slot, tolerance) {
   const r = slot.getBoundingClientRect();
   return x >= r.left - tolerance && x <= r.right + tolerance &&
          y >= r.top - tolerance && y <= r.bottom + tolerance;
 }
 
+/* Devuelve el slot MÁS CERCANO al punto donde se soltó (para poder
+   avisar "esa pieza no va en ese hueco"). Calcula la distancia al centro
+   de cada slot y se queda con la menor, si está a menos de 200px. */
 function getNearestSlot(x, y) {
   const slots = [...document.querySelectorAll(".slot")].filter(s => {
     const r = s.getBoundingClientRect();
@@ -613,13 +619,12 @@ function clearDropPreview() {
 }
 
 /* =================================================================
-   INSTALACIÓN (animación de encaje)
+   INSTALACIÓN (con su animación de encaje)
    ================================================================= */
 function installComponent(component, slot) {
   if (placed.has(component.id)) return;
 
   if (component.type === "screws") {
-    // Herramienta: destornillador que aparece y gira
     const tool = document.createElement("div");
     tool.className = "tool-screwdriver";
     tool.innerHTML = "<span class='sd-handle'></span><span class='sd-shaft'></span><span class='sd-tip'></span>";
@@ -637,16 +642,19 @@ function installComponent(component, slot) {
       setTimeout(() => marks.classList.remove("tightening"), 850);
     }
     slot.classList.add("screwed");
+
   } else if (component.target === "mobo-tray") {
     motherboard.classList.remove("not-mounted");
     slot.dataset.installedId = component.id;
     slot.classList.add("occupied", "correct-flash");
     setTimeout(() => slot.classList.remove("correct-flash"), 700);
+
   } else if (component.target === "case-close") {
     slot.dataset.installedId = component.id;
     slot.classList.add("occupied", "correct-flash");
     setTimeout(() => slot.classList.remove("correct-flash"), 700);
     if (sidePanelGlass) { sidePanelGlass.hidden = false; sidePanelGlass.classList.add("show"); }
+
   } else {
     const installed = document.createElement("div");
     installed.className = "installed-component";
@@ -664,8 +672,7 @@ function installComponent(component, slot) {
         const r = document.createElement("div");
         r.id = "aioRadiator";
         r.className = "aio-radiator";
-        r.innerHTML =
-          "<div class='aio-fan'></div><div class='aio-fan'></div><div class='aio-fan'></div>" +
+        r.innerHTML = "<div class='aio-fan'></div><div class='aio-fan'></div><div class='aio-fan'></div>" +
           "<span class='aio-tube tube-a'></span><span class='aio-tube tube-b'></span>";
         pcCase.appendChild(r);
       }
@@ -681,16 +688,14 @@ function installComponent(component, slot) {
   selectComponent(component.id);
   playInstallSound(component);
 
-  // La ficha técnica aparece CUANDO TERMINA la animación de encaje (no durante)
+  // La ficha aparece cuando termina la animación
   let fichaDelay = 720;
   if (component.type === "screws") fichaDelay = 950;
-  if (component.id === "cpu") fichaDelay = 1050;   // espera la palanca del socket
-  if (component.id === "m2") fichaDelay = 1300;    // espera la inserción en ángulo + tornillo
+  if (component.id === "cpu") fichaDelay = 1050;
+  if (component.id === "m2") fichaDelay = 1300;
   setTimeout(() => { if (placed.has(component.id)) showSpecModal(component); }, fichaDelay);
 
-  showToast(component.type === "screws"
-    ? `🔩 ${component.name} listo.`
-    : `✅ ${component.name} instalado correctamente.`);
+  showToast(component.type === "screws" ? `🔩 ${component.name} listo.` : `✅ ${component.name} instalado correctamente.`);
 
   if (effectivePlaced() === effectiveTotal()) finishBuild();
 }
@@ -707,7 +712,7 @@ function finishBuild() {
 }
 
 /* =================================================================
-   GUÍA / INFO / UI
+   GUÍA · INFO · UI
    ================================================================= */
 function renderGuide() {
   const currentId = getCurrentComponentId();
@@ -721,18 +726,25 @@ function renderGuide() {
     item.className = "guide-item";
     if (done) item.className += " done";
     else if (c.id === currentId) item.className += " current";
-    item.innerHTML =
-      `<span class="gi-n"><span class="gi-text-n">${c.step}</span></span><span>${c.name}</span>`;
+    item.innerHTML = `<span class="gi-n"><span class="gi-text-n">${c.step}</span></span><span>${c.name}</span>`;
     item.addEventListener("click", () => selectComponent(c.id));
     stepGuide.appendChild(item);
   });
+  refrescarContexto();   // actualiza panel de aprendizaje + índice + destino
+}
+
+/* Pequeña ayuda: arma la tabla de la ficha técnica */
+function tablaSpecs(specs) {
+  if (!specs) return "";
+  return `<table class="spec-table"><tbody>` +
+    specs.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("") + `</tbody></table>`;
 }
 
 function selectComponent(componentId) {
   selectedId = componentId;
-  document.querySelectorAll(".part-card").forEach(card => {
-    card.classList.toggle("selected", card.dataset.id === componentId);
-  });
+  document.querySelectorAll(".part-card").forEach(card =>
+    card.classList.toggle("selected", card.dataset.id === componentId));
+
   const c = getComponent(componentId);
   let status;
   if (placed.has(c.id)) status = "Instalado ✓";
@@ -740,37 +752,30 @@ function selectComponent(componentId) {
   else if (depsMet(c)) status = "Listo para instalar";
   else status = "Bloqueado — " + nextPendingDepText(c);
 
-  const specs = SPECS[c.id];
-  let specsHtml = "";
-  if (specs) {
-    specsHtml =
-      `<div class="spec-sheet"><h4>Ficha técnica</h4><table class="spec-table"><tbody>` +
-      specs.map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`).join("") +
-      `</tbody></table></div>`;
-  }
+  const specsHtml = SPECS[c.id]
+    ? `<div class="spec-sheet"><h4>Ficha técnica</h4>${tablaSpecs(SPECS[c.id])}</div>` : "";
 
   infoBox.innerHTML = `
     <h3>${c.name}</h3>
     <p>${c.info}</p>
     ${specsHtml}
     <p><strong>Va en:</strong> ${SLOT_LABELS[c.target] || c.target}</p>
-    <p><strong>Estado:</strong> ${status}</p>
-  `;
+    <p><strong>Estado:</strong> ${status}</p>`;
+
+  mostrarLearnDePieza(c);   // panel contextual de la pieza seleccionada
 }
 
 function showDefaultInfo() {
   infoBox.innerHTML = `
     <p>Selecciona o arrastra un componente para ver su descripción y dónde se instala.</p>
     <p>Sigue el orden de la guía. En el paso 6 eliges refrigeración por <strong>aire</strong> o <strong>líquida</strong>.</p>
-    <p>🔍 <strong>Tip:</strong> haz clic en una pieza ya instalada dentro del gabinete para ver su <strong>ficha técnica</strong>.</p>
-  `;
+    <p>🔍 <strong>Tip:</strong> haz clic en una pieza ya instalada dentro del gabinete para ver su <strong>ficha técnica</strong>.</p>`;
 }
 
 function updateUI() {
   const n = effectivePlaced(), total = effectiveTotal();
   progressLabel.textContent = `Ensamblaje: ${n} / ${total} pasos`;
   progressBar.style.width = (n / total * 100) + "%";
-
   const cur = getCurrentComponent();
   if (cur) phaseText.textContent = `${cur.step}. ${cur.name}`;
   else if (n === total) phaseText.textContent = "¡Ensamblaje completo!";
@@ -781,36 +786,156 @@ function highlightNextStep() {
   if (!cur) { showToast("No quedan pasos pendientes."); return; }
   selectComponent(cur.id);
   const slot = getTargetSlot(cur);
-  if (slot) {
-    slot.classList.add("next-step");
-    setTimeout(() => slot.classList.remove("next-step"), 3200);
-  }
+  if (slot) { slot.classList.add("next-step"); setTimeout(() => slot.classList.remove("next-step"), 3200); }
   showToast(`Siguiente paso: ${cur.name} → ${SLOT_LABELS[cur.target] || cur.target}.`);
 }
 
 /* =================================================================
-   HELPERS
+   EXPLICACIÓN CONTEXTUAL  (teoría ANTES de instalar)
+   Panel de aprendizaje del paso actual, burbuja de instrucción,
+   índice de categorías y resaltado permanente del destino.
+   ================================================================= */
+const CATEGORIAS = [
+  { n: "Preparación del chasis", ids: ["standoffs", "mobo", "screwMobo"] },
+  { n: "Procesador y refrigeración", ids: ["cpu", "paste", "cooler", "aio", "cpuFan"] },
+  { n: "Memoria y almacenamiento", ids: ["ram1", "ram2", "m2", "ssd", "hdd", "screwDrives"] },
+  { n: "Energía", ids: ["psu", "screwPsu", "eps", "atx", "pcie", "sataPower"] },
+  { n: "Expansión y ventilación", ids: ["gpu", "screwGpu", "fanFront", "fanRear", "screwFans"] },
+  { n: "Conexiones del panel frontal", ids: ["sataData", "pwrSw", "rstSw", "hddLed", "pwrLed", "usbFront", "audioFront"] },
+  { n: "Cierre del equipo", ids: ["manage", "sidePanel", "screwPanel"] },
+  { n: "Periféricos", ids: ["keyboard", "mouse", "monitor"] }
+];
+
+const INSTRUCCIONES = {
+  standoffs: "Atornilla los separadores en la bandeja siguiendo el patrón ATX.",
+  mobo: "Apoya la placa sobre los separadores, alineando el I/O shield con la parte trasera.",
+  screwMobo: "Atornilla la placa en cada separador sin apretar de más.",
+  cpu: "Levanta la palanca del socket y alinea el triángulo dorado del CPU con el de la placa.",
+  paste: "Aplica un punto de pasta del tamaño de un guisante en el centro del procesador.",
+  cooler: "Asienta el disipador sobre la pasta y fíjalo con sus sujetadores.",
+  aio: "Coloca el bloque de la bomba sobre el CPU; el radiador se fija arriba del gabinete.",
+  cpuFan: "Conecta el cable del ventilador al cabezal CPU_FAN, junto al socket.",
+  ram1: "Abre los seguros, alinea la muesca y presiona hasta oír el clic.",
+  ram2: "Coloca el segundo módulo en B2 para activar el doble canal.",
+  m2: "Inserta el SSD en ángulo, bájalo y fíjalo con su tornillo.",
+  psu: "Coloca la fuente en su compartimento inferior, con el ventilador hacia abajo.",
+  screwPsu: "Fija la fuente con sus cuatro tornillos por la parte trasera.",
+  ssd: "Coloca el SSD de 2.5\" en su bahía.",
+  hdd: "Monta el disco de 3.5\" en la jaula de discos.",
+  screwDrives: "Atornilla ambos discos para que no vibren.",
+  gpu: "Inserta la GPU en el PCIe x16 hasta oír el clic del seguro.",
+  screwGpu: "Atornilla el bracket de la GPU al chasis.",
+  fanFront: "Monta el ventilador frontal con la flecha apuntando hacia dentro.",
+  fanRear: "Monta el ventilador trasero con la flecha apuntando hacia fuera.",
+  screwFans: "Fija cada ventilador con sus cuatro tornillos largos.",
+  eps: "Conecta el EPS de 8 pines en la esquina superior izquierda de la placa.",
+  atx: "Conecta el ATX de 24 pines en el borde derecho hasta que haga clic.",
+  pcie: "Conecta el cable PCIe a los conectores de energía de la GPU.",
+  sataData: "Lleva el cable plano SATA del disco a un puerto SATA de la placa.",
+  sataPower: "Conecta la alimentación SATA de la fuente a los discos.",
+  pwrSw: "Coloca el Power SW en su par de pines del F_PANEL. No tiene polaridad.",
+  rstSw: "Coloca el Reset SW en su par de pines. Tampoco tiene polaridad.",
+  hddLed: "Es un LED: respeta la polaridad, el positivo va en su pin marcado.",
+  pwrLed: "También es un LED: coloca el positivo en el pin correcto o no encenderá.",
+  usbFront: "Conecta el cable USB del gabinete a su cabezal en la placa.",
+  audioFront: "Conecta el audio frontal al cabezal HD Audio (AAFP).",
+  manage: "Pasa los cables por detrás de la bandeja y sujétalos con cinchos.",
+  sidePanel: "Coloca el panel lateral en su sitio.",
+  screwPanel: "Atornilla el panel y cierra el gabinete.",
+  keyboard: "Conecta el teclado a un puerto USB del panel trasero.",
+  mouse: "Conecta el mouse a otro puerto USB libre.",
+  monitor: "Conecta el monitor a una salida de la tarjeta gráfica, no a la placa."
+};
+
+/* Panel del PASO ACTUAL */
+function pintarLearn() {
+  if (!learnPanel) return;
+  const c = getCurrentComponent();
+
+  if (!c) {
+    learnPanel.innerHTML =
+      `<div class="learn-head">ENSAMBLAJE COMPLETO</div>
+       <div class="learn-body"><p>Todos los pasos están cubiertos. Pulsa <strong>Encender PC</strong> para ejecutar el POST y verificar el equipo.</p></div>`;
+    if (bubble) bubble.innerHTML = `<span class="instr-ico">✅</span><span>Ensamblaje terminado. Ya puedes encender el equipo.</span>`;
+    return;
+  }
+
+  learnPanel.innerHTML =
+    `<div class="learn-head">ANTES DE INSTALAR · PASO ${c.step}</div>
+     <h3>${c.name}</h3>
+     <div class="learn-body">
+       <p>${c.info}</p>
+       <p class="learn-where">📍 Va en: <strong>${SLOT_LABELS[c.target] || c.target}</strong></p>
+       ${tablaSpecs(SPECS[c.id])}
+     </div>`;
+
+  if (bubble) bubble.innerHTML =
+    `<span class="instr-ico">🛠️</span><span>${INSTRUCCIONES[c.id] || ("Coloca " + c.name + " en " + (SLOT_LABELS[c.target] || c.target) + ".")}</span>`;
+}
+
+/* Panel de una pieza SELECCIONADA (consulta o "aún no toca") */
+function mostrarLearnDePieza(c) {
+  if (!learnPanel) return;
+  const actual = getCurrentComponentId();
+  if (!c || c.id === actual || placed.has(c.id)) { pintarLearn(); return; }
+
+  const listo = depsMet(c);
+  learnPanel.innerHTML =
+    `<div class="learn-head">${listo ? "CONSULTA · PASO " + c.step : "AÚN NO TOCA · PASO " + c.step}</div>
+     <h3>${c.name}</h3>
+     <div class="learn-body">
+       <p>${c.info}</p>
+       <p class="learn-where">📍 Va en: <strong>${SLOT_LABELS[c.target] || c.target}</strong></p>
+       ${listo ? "" : `<p class="learn-where">🔒 ${nextPendingDepText(c)}</p>`}
+       ${tablaSpecs(SPECS[c.id])}
+     </div>`;
+}
+
+/* Índice de categorías con avance por grupo */
+function pintarIndice() {
+  if (!catIndex) return;
+  const actual = getCurrentComponentId();
+  catIndex.innerHTML = "";
+  CATEGORIAS.forEach(cat => {
+    const piezas = cat.ids.map(getComponent)
+      .filter(c => c && !(c.group && groupSatisfied(c.group) && !placed.has(c.id)));
+    if (!piezas.length) return;
+
+    const hechas = piezas.filter(c => placed.has(c.id)).length;
+    const completa = hechas === piezas.length;
+    const activa = piezas.some(c => c.id === actual);
+
+    const el = document.createElement("div");
+    el.className = "cat-item" + (completa ? " done" : "") + (activa ? " active" : "");
+    el.innerHTML = `<span class="ci-dot">${completa ? "✓" : "•"}</span><span>${cat.n}</span><span style="margin-left:auto">${hechas}/${piezas.length}</span>`;
+    catIndex.appendChild(el);
+  });
+}
+
+/* NOTA: el resaltado automático del slot destino se retiró a propósito.
+   Antes se marcaba siempre el hueco correcto (clase 'target-now'), lo que
+   volvía inútil el botón "Resaltar siguiente paso" y hacía que el usuario
+   solo soltara donde brillaba. Ahora debe SABER dónde va cada pieza; el
+   botón sigue disponible como pista puntual y el panel explica CÓMO ponerla. */
+function refrescarContexto() { pintarLearn(); pintarIndice(); }
+
+/* =================================================================
+   HELPERS de dependencias / conteo
+   -----------------------------------------------------------------
+   Estas funciones cortas son el "cerebro" de las reglas del armado:
+   deciden qué pieza sigue, cuáles están bloqueadas y cuánto llevas.
    ================================================================= */
 function getComponent(id) { return components.find(c => c.id === id); }
 
+/* Lista de dependencias de una pieza, siempre como arreglo. */
 function depsList(component) {
   if (!component.dependsOn) return [];
   return Array.isArray(component.dependsOn) ? component.dependsOn : [component.dependsOn];
 }
-
 function isGroupToken(d) { return typeof d === "string" && d.indexOf("group:") === 0; }
-
-function groupSatisfied(g) {
-  return g ? components.some(c => c.group === g && placed.has(c.id)) : false;
-}
-
-function depMet(d) {
-  return isGroupToken(d) ? groupSatisfied(d.slice(6)) : placed.has(d);
-}
-
-function depsMet(component) {
-  return depsList(component).every(depMet);
-}
+function groupSatisfied(g) { return g ? components.some(c => c.group === g && placed.has(c.id)) : false; }
+function depMet(d) { return isGroupToken(d) ? groupSatisfied(d.slice(6)) : placed.has(d); }
+function depsMet(component) { return depsList(component).every(depMet); }
 
 function nextPendingDepText(component) {
   const pending = depsList(component).filter(d => !depMet(d))
@@ -822,16 +947,14 @@ function nextPendingDepText(component) {
 function getCurrentComponent() {
   return components.find(c => !placed.has(c.id) && !(c.group && groupSatisfied(c.group))) || null;
 }
-function getCurrentComponentId() {
-  const c = getCurrentComponent();
-  return c ? c.id : null;
-}
+function getCurrentComponentId() { const c = getCurrentComponent(); return c ? c.id : null; }
 
+/* Total y colocadas contando el grupo de refrigeración como UN paso
+   (aire y líquida son la misma etapa, aunque haya dos piezas posibles). */
 function effectiveTotal() {
   const seen = new Set(); let t = 0;
   components.forEach(c => {
-    if (c.group) { if (!seen.has(c.group)) { seen.add(c.group); t++; } }
-    else t++;
+    if (c.group) { if (!seen.has(c.group)) { seen.add(c.group); t++; } } else t++;
   });
   return t;
 }
@@ -839,8 +962,7 @@ function effectivePlaced() {
   const seen = new Set(); let n = 0;
   components.forEach(c => {
     if (!placed.has(c.id)) return;
-    if (c.group) { if (!seen.has(c.group)) { seen.add(c.group); n++; } }
-    else n++;
+    if (c.group) { if (!seen.has(c.group)) { seen.add(c.group); n++; } } else n++;
   });
   return n;
 }
@@ -859,47 +981,36 @@ function showError(title, body) {
   errorModal.hidden = false;
 }
 
-/* Ficha técnica centrada al colocar una pieza (para exponer el proyecto) */
+/* Ficha técnica centrada al colocar una pieza */
 function showSpecModal(component) {
   const isScrew = component.type === "screws";
   specTitle.textContent = component.name;
-
-  // Rol / función (clave para tornillos y separadores)
   specRole.textContent = component.info || "";
 
-  // Tabla de ficha técnica (si la pieza tiene specs)
-  const specs = SPECS[component.id];
-  if (specs && specs.length) {
-    specBody.innerHTML =
-      `<div class="spec-sheet"><h4>Ficha técnica</h4><table class="spec-table"><tbody>` +
-      specs.map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`).join("") +
-      `</tbody></table></div>`;
+  if (SPECS[component.id]) {
+    specBody.innerHTML = `<div class="spec-sheet"><h4>Ficha técnica</h4>${tablaSpecs(SPECS[component.id])}</div>`;
   } else {
-    // Tornillos, separadores y acciones: mostramos "Función" en vez de tabla
-    specBody.innerHTML =
-      `<div class="spec-sheet"><h4>Función</h4><p class="spec-func">${component.short || component.info || ""}</p></div>`;
+    specBody.innerHTML = `<div class="spec-sheet"><h4>Función</h4><p class="spec-func">${component.short || component.info || ""}</p></div>`;
   }
 
-  // Dato extra de chipset en la placa (y como apunte en el CPU)
   if (component.id === "mobo" || component.id === "cpu") {
-    specExtra.textContent = CHIPSET.note;
-    specExtra.hidden = false;
-  } else {
-    specExtra.hidden = true;
-    specExtra.textContent = "";
-  }
+    specExtra.textContent = CHIPSET.note; specExtra.hidden = false;
+  } else { specExtra.hidden = true; specExtra.textContent = ""; }
 
-  // Miniatura de la pieza
   specVisual.innerHTML = "";
-  const vis = createVisual(component.type);
-  specVisual.appendChild(vis);
+  specVisual.appendChild(createVisual(component.type));
   specVisual.classList.toggle("is-screw", isScrew);
-
   specModal.hidden = false;
 }
 
 /* =================================================================
-   SONIDOS DE ANCLAJE (Web Audio · sin archivos externos)
+   SONIDOS (Web Audio, sin archivos externos)
+   -----------------------------------------------------------------
+   No cargamos archivos .mp3: generamos los sonidos por programación.
+   · _noise() crea "ruido" (como un clic o un chasquido) filtrándolo.
+   · _blip() crea un tono puro (un pitido) con un oscilador.
+   Los demás (sfxClick, sfxPlug, ...) combinan esos dos para lograr
+   el sonido de cada acción. Es opcional: si el navegador no deja, no pasa nada.
    ================================================================= */
 let _actx = null, soundOn = true;
 function actx() {
@@ -939,117 +1050,78 @@ function sfxPower() {
   _blip(320, 0.12, "sawtooth", 0.10);
   setTimeout(() => _blip(520, 0.12, "sawtooth", 0.10), 90);
   setTimeout(() => _blip(780, 0.18, "triangle", 0.12), 180);
-  setTimeout(() => _blip(1040, 0.55, "sine", 0.10), 300);   // tono sostenido
-  setTimeout(() => _noise(1.2, "lowpass", 1000, 0.09), 120); // whoosh de ventiladores
+  setTimeout(() => _blip(1040, 0.55, "sine", 0.10), 300);
+  setTimeout(() => _noise(1.2, "lowpass", 1000, 0.09), 120);
 }
-
 function playInstallSound(component) {
   if (component.type === "screws") sfxScrew();
-  else if (component.type === "fp-pin" || component.type === "manage" ||
-           String(component.type).indexOf("cable") === 0) sfxPlug();
+  else if (component.type === "fp-pin" || component.type === "manage" || String(component.type).indexOf("cable") === 0) sfxPlug();
   else sfxClick();
 }
 function toggleSound() {
   soundOn = !soundOn;
-  if (soundBtn) {
-    soundBtn.classList.toggle("active", soundOn);
-    soundBtn.textContent = soundOn ? "🔊 Sonido" : "🔇 Sonido";
-  }
+  if (soundBtn) { soundBtn.classList.toggle("active", soundOn); soundBtn.textContent = soundOn ? "🔊 Sonido" : "🔇 Sonido"; }
   showToast(soundOn ? "Sonido activado." : "Sonido silenciado.");
 }
 
 /* =================================================================
-   CÁMARA 360°, ZOOM, AUTO-GIRO, CAPAS, TRANSPARENTE
+   CÁMARA 360°, ZOOM, AUTO-GIRO, CAPAS
+   -----------------------------------------------------------------
+   No hay 3D "real": es un truco de CSS. La escena tiene transform con
+   rotateX/rotateZ/scale y aquí solo cambiamos esos números:
+   · applyTransform() aplica la rotación/zoom/desplazamiento actuales.
+   · setupOrbit() escucha el mouse: arrastrar = girar, rueda = zoom,
+     clic derecho/shift = desplazar (pan).
+   · tickAuto() gira solo, poquito en cada cuadro, si el modo auto está activo.
    ================================================================= */
 function applyTransform() {
-  pcCase.style.transform =
-    `translate(${panX}px, ${panY}px) rotateX(${rotX}deg) rotateZ(${rotZ}deg) scale(${zoom})`;
+  pcCase.style.transform = `translate(${panX}px, ${panY}px) rotateX(${rotX}deg) rotateZ(${rotZ}deg) scale(${zoom})`;
 }
-
 function changeView(view) {
-  const p = PRESETS[view];
-  if (!p) return;
-  rotX = p[0]; rotZ = p[1]; zoom = p[2];
-  panX = -200; panY = 0;               // recenter al elegir una vista
+  const p = PRESETS[view]; if (!p) return;
+  rotX = p[0]; rotZ = p[1]; zoom = p[2]; panX = -200; panY = 0;
   applyTransform();
-  document.querySelectorAll(".view-btn[data-view]").forEach(b =>
-    b.classList.toggle("active", b.dataset.view === view));
+  document.querySelectorAll(".view-btn[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));
 }
-
 function setupOrbit() {
-  // Evita el menú contextual para poder usar clic derecho como paneo
   boardScene.addEventListener("contextmenu", e => e.preventDefault());
-
   boardScene.addEventListener("pointerdown", e => {
     if (e.target.closest("button")) return;
     boardScene._lx = e.clientX; boardScene._ly = e.clientY;
-    // Clic derecho / rueda / Shift / Ctrl => PANEO. Clic izquierdo => rotar.
-    if (e.button === 2 || e.button === 1 || e.shiftKey || e.ctrlKey) {
-      panningBoard = true;
-      boardScene.classList.add("panning");
-    } else {
-      draggingBoard = true;
-      boardScene.classList.add("grabbing");
-    }
+    if (e.button === 2 || e.button === 1 || e.shiftKey || e.ctrlKey) { panningBoard = true; boardScene.classList.add("panning"); }
+    else { draggingBoard = true; boardScene.classList.add("grabbing"); }
     pcCase.classList.add("no-trans");
   });
-
   window.addEventListener("pointermove", e => {
     if (panningBoard) {
-      panX += (e.clientX - boardScene._lx);
-      panY += (e.clientY - boardScene._ly);
-      boardScene._lx = e.clientX; boardScene._ly = e.clientY;
-      applyTransform();
-      return;
+      panX += (e.clientX - boardScene._lx); panY += (e.clientY - boardScene._ly);
+      boardScene._lx = e.clientX; boardScene._ly = e.clientY; applyTransform(); return;
     }
     if (!draggingBoard) return;
     rotZ += (e.clientX - boardScene._lx) * 0.45;
     rotX -= (e.clientY - boardScene._ly) * 0.40;
     rotX = Math.max(-85, Math.min(89, rotX));
-    boardScene._lx = e.clientX; boardScene._ly = e.clientY;
-    applyTransform();
+    boardScene._lx = e.clientX; boardScene._ly = e.clientY; applyTransform();
   });
-
   window.addEventListener("pointerup", () => {
     if (!draggingBoard && !panningBoard) return;
-    draggingBoard = false;
-    panningBoard = false;
-    boardScene.classList.remove("grabbing", "panning");
-    pcCase.classList.remove("no-trans");
+    draggingBoard = false; panningBoard = false;
+    boardScene.classList.remove("grabbing", "panning"); pcCase.classList.remove("no-trans");
   });
-
-  // Zoom HACIA EL CURSOR (no al centro): el punto bajo el cursor se mantiene fijo
   boardScene.addEventListener("wheel", e => {
     e.preventDefault();
     const rect = boardScene.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const ex = e.clientX - cx;
-    const ey = e.clientY - cy;
-
+    const ex = e.clientX - (rect.left + rect.width / 2);
+    const ey = e.clientY - (rect.top + rect.height / 2);
     const oldZoom = zoom;
-    let newZoom = zoom + (e.deltaY < 0 ? 0.08 : -0.08);
-    newZoom = Math.max(0.32, Math.min(2.2, newZoom));
+    let newZoom = Math.max(0.32, Math.min(2.2, zoom + (e.deltaY < 0 ? 0.08 : -0.08)));
     const f = newZoom / oldZoom;
-
-    // Mantener fijo el punto bajo el cursor
-    panX = ex - f * (ex - panX);
-    panY = ey - f * (ey - panY);
-    zoom = newZoom;
-    applyTransform();
+    panX = ex - f * (ex - panX); panY = ey - f * (ey - panY);
+    zoom = newZoom; applyTransform();
   }, { passive: false });
 }
-
-function tickAuto() {
-  if (autoOn && !draggingBoard) { rotZ += 0.16; applyTransform(); }
-  requestAnimationFrame(tickAuto);
-}
-
-function toggleAuto() {
-  autoOn = !autoOn;
-  autoBtn.classList.toggle("active", autoOn);
-}
-
+function tickAuto() { if (autoOn && !draggingBoard) { rotZ += 0.16; applyTransform(); } requestAnimationFrame(tickAuto); }
+function toggleAuto() { autoOn = !autoOn; autoBtn.classList.toggle("active", autoOn); }
 function toggleLayers() {
   exploded = !exploded;
   pcCase.classList.toggle("exploded", exploded);
@@ -1058,26 +1130,18 @@ function toggleLayers() {
 }
 
 /* =================================================================
-   ENCENDIDO (RGB + confeti)
+   ENCENDIDO (RGB + efecto de luz)
    ================================================================= */
 function powerOn() {
   if (powerBtn) powerBtn.hidden = true;
   sfxPower();
-
-  // Ambientar: viñeta que oscurece los bordes y foco en el build
   boardScene.classList.add("power-dim");
   pcCase.classList.add("igniting");
+  zoom = Math.min(2.2, zoom * 1.06); applyTransform();
 
-  // Empuje de cámara cinematográfico (usa la transición del gabinete)
-  zoom = Math.min(2.2, zoom * 1.06);
-  applyTransform();
-
-  // Encendido escalonado de las luces
   setTimeout(() => pcCase.classList.add("lit-fans"), 150);
   setTimeout(() => pcCase.classList.add("lit-ram"), 470);
   setTimeout(() => pcCase.classList.add("lit-gpu"), 780);
-
-  // Estado final: RGB estable + efecto de energía + insignia
   setTimeout(() => {
     pcCase.classList.add("powered");
     boardScene.classList.remove("power-dim");
@@ -1085,72 +1149,50 @@ function powerOn() {
     powerFX();
     showToast("⚡ Sistema encendido. Iluminación RGB y ventiladores en marcha.");
   }, 1050);
-
   setTimeout(() => pcCase.classList.remove("igniting"), 1750);
 }
 
+/* Efecto visual del encendido dibujado en un <canvas>: un destello,
+   unos anillos que se expanden y partículas ("motas") que suben.
+   Cada cuadro se borra y se vuelve a dibujar con requestAnimationFrame,
+   hasta que todo se desvanece. Es puramente decorativo. */
 function powerFX() {
   const c = confettiCanvas, x = c.getContext("2d");
   c.width = innerWidth; c.height = innerHeight;
   const cx = innerWidth / 2, cy = innerHeight / 2.25;
   const cols = ["#52ffb8", "#6bbdff", "#b98cff", "#8affd6", "#7ed7ff"];
-
-  // Motas de luz que ascienden (como polvo iluminado)
   const motes = Array.from({ length: 48 }, () => ({
-    x: cx + (Math.random() - .5) * 170,
-    y: cy + (Math.random() - .5) * 130,
-    vx: (Math.random() - .5) * 0.8,
-    vy: -(Math.random() * 1.7 + 0.6),
-    r: Math.random() * 3 + 1.2,
-    c: cols[(Math.random() * cols.length) | 0],
-    life: 1, sway: Math.random() * 6.28
+    x: cx + (Math.random() - .5) * 170, y: cy + (Math.random() - .5) * 130,
+    vx: (Math.random() - .5) * 0.8, vy: -(Math.random() * 1.7 + 0.6),
+    r: Math.random() * 3 + 1.2, c: cols[(Math.random() * cols.length) | 0], life: 1, sway: Math.random() * 6.28
   }));
-  // Anillos de energía que se expanden
-  const rings = [
-    { r: 12, a: 0.65, col: "#6bbdff" },
-    { r: 12, a: 0.55, col: "#b98cff" },
-    { r: 12, a: 0.45, col: "#52ffb8" }
-  ];
+  const rings = [{ r: 12, a: 0.65, col: "#6bbdff" }, { r: 12, a: 0.55, col: "#b98cff" }, { r: 12, a: 0.45, col: "#52ffb8" }];
   let flash = 0.9;
-
   (function run() {
     x.clearRect(0, 0, c.width, c.height);
-
-    // Destello central
     if (flash > 0.02) {
       const g = x.createRadialGradient(cx, cy, 0, cx, cy, 460);
-      g.addColorStop(0, `rgba(255,255,255,${flash * 0.5})`);
-      g.addColorStop(1, "rgba(255,255,255,0)");
-      x.fillStyle = g; x.fillRect(0, 0, c.width, c.height);
-      flash *= 0.9;
+      g.addColorStop(0, `rgba(255,255,255,${flash * 0.5})`); g.addColorStop(1, "rgba(255,255,255,0)");
+      x.fillStyle = g; x.fillRect(0, 0, c.width, c.height); flash *= 0.9;
     }
-
-    // Anillos
     rings.forEach((ri, i) => {
       ri.r += 6 + i * 1.6; ri.a *= 0.966;
       x.beginPath(); x.arc(cx, cy, ri.r, 0, Math.PI * 2);
       x.strokeStyle = ri.col; x.globalAlpha = Math.max(ri.a, 0);
-      x.lineWidth = 3; x.shadowBlur = 18; x.shadowColor = ri.col;
-      x.stroke(); x.globalAlpha = 1; x.shadowBlur = 0;
+      x.lineWidth = 3; x.shadowBlur = 18; x.shadowColor = ri.col; x.stroke();
+      x.globalAlpha = 1; x.shadowBlur = 0;
     });
-
-    // Motas
     let alive = false;
     motes.forEach(p => {
-      p.sway += 0.05;
-      p.x += p.vx + Math.sin(p.sway) * 0.3;
-      p.y += p.vy; p.vy *= 0.995; p.life -= 0.006;
+      p.sway += 0.05; p.x += p.vx + Math.sin(p.sway) * 0.3; p.y += p.vy; p.vy *= 0.995; p.life -= 0.006;
       if (p.life > 0) {
-        alive = true;
-        x.globalAlpha = Math.max(p.life, 0);
+        alive = true; x.globalAlpha = Math.max(p.life, 0);
         x.fillStyle = p.c; x.shadowBlur = 12; x.shadowColor = p.c;
         x.beginPath(); x.arc(p.x, p.y, p.r, 0, Math.PI * 2); x.fill();
         x.globalAlpha = 1; x.shadowBlur = 0;
       }
     });
-
-    const ringsAlive = rings.some(r => r.a > 0.02);
-    if (alive || ringsAlive || flash > 0.02) requestAnimationFrame(run);
+    if (alive || rings.some(r => r.a > 0.02) || flash > 0.02) requestAnimationFrame(run);
     else x.clearRect(0, 0, c.width, c.height);
   })();
 }
@@ -1175,22 +1217,17 @@ function runBoot() {
    ================================================================= */
 highlightBtn.addEventListener("click", highlightNextStep);
 resetBtn.addEventListener("click", initBuild);
-
-document.querySelectorAll(".view-btn[data-view]").forEach(b =>
-  b.addEventListener("click", () => changeView(b.dataset.view)));
-
+document.querySelectorAll(".view-btn[data-view]").forEach(b => b.addEventListener("click", () => changeView(b.dataset.view)));
 autoBtn.addEventListener("click", toggleAuto);
 layersBtn.addEventListener("click", toggleLayers);
 centerBtn.addEventListener("click", () => changeView("iso"));
 if (soundBtn) soundBtn.addEventListener("click", toggleSound);
 powerBtn.addEventListener("click", powerOn);
 document.getElementById("xrayBtn").addEventListener("click", function () {
-  pcCase.classList.toggle("xray");
-  this.classList.toggle("active");
+  pcCase.classList.toggle("xray"); this.classList.toggle("active");
 });
 errorClose.addEventListener("click", () => { errorModal.hidden = true; });
 errorModal.addEventListener("click", e => { if (e.target === errorModal) errorModal.hidden = true; });
-
 specClose.addEventListener("click", () => { specModal.hidden = true; });
 specModal.addEventListener("click", e => { if (e.target === specModal) specModal.hidden = true; });
 
@@ -1215,9 +1252,14 @@ initBuild();
 
 
 /* =================================================================
-   =========   MÓDULOS DIDÁCTICOS (Servicio Social) v2   ==========
-   1 Teoría (dinámica) · 2 Catálogo · 3 Ensamble · 4 Compatibilidad
-   académica + Diagnóstico · 5 Autoevaluación ampliada.
+   =============   MÓDULOS DIDÁCTICOS (Servicio Social)   ==========
+   1 Teoría · 2 Catálogo · 4 Compatibilidad+Diagnóstico
+   5 Autoevaluación · 6 Glosario  +  Menú principal
+   -----------------------------------------------------------------
+   Todo esto va DENTRO de una función que se ejecuta sola: (function(){ ... })();
+   Eso se llama IIFE y sirve para que las variables de los módulos
+   (CATALOG, POOL, etc.) NO se mezclen con las del ensamblaje de arriba.
+   Cada módulo tiene su propia función renderX() que "pinta" su pantalla.
    ================================================================= */
 (function () {
 
@@ -1228,23 +1270,20 @@ initBuild();
     const btns = document.querySelectorAll(".modnav-btn");
     btns.forEach(b => b.addEventListener("click", () => {
       btns.forEach(x => x.classList.toggle("is-active", x === b));
-      document.querySelectorAll(".module").forEach(m =>
-        m.classList.toggle("is-active", m.id === b.dataset.mod));
+      document.querySelectorAll(".module").forEach(m => m.classList.toggle("is-active", m.id === b.dataset.mod));
       window.scrollTo({ top: 0, behavior: "smooth" });
     }));
   }
 
   /* =================================================================
-     MÓDULO 1 · TEORÍA (nivel universitario)
-     Sub-secciones: Arquitectura (von Neumann + buses + ciclo),
-     Jerarquía de memoria, y Componentes (con mini-comprobación).
+     MÓDULO 1 · TEORÍA  (3 apartados: Arquitectura · Memoria · Componentes)
      ================================================================= */
   const VN = [
-    { k: "in", t: "Entrada", d: "Dispositivos que introducen datos al sistema (teclado, mouse, sensores). Convierten la acción del usuario o del entorno en datos que el CPU puede procesar." },
-    { k: "cpu", t: "CPU (UC + ALU + Registros)", d: "La Unidad Central de Proceso ejecuta las instrucciones. Integra la Unidad de Control (coordina), la ALU (opera) y los Registros (memoria ultrarrápida interna)." },
-    { k: "out", t: "Salida", d: "Dispositivos que entregan resultados (monitor, impresora, bocinas). Transforman los datos procesados en información para el usuario." },
-    { k: "mem", t: "Memoria principal (RAM)", d: "Guarda datos e instrucciones del programa en ejecución. El CPU la lee y escribe constantemente; es volátil (se borra al apagar)." },
-    { k: "bus", t: "Buses del sistema", d: "Canales que comunican CPU, memoria y E/S. Se dividen en bus de datos, bus de direcciones y bus de control." }
+    { t: "Entrada", d: "Dispositivos que introducen datos al sistema (teclado, mouse, sensores). Convierten la acción del usuario o del entorno en datos que el CPU puede procesar." },
+    { t: "CPU (UC + ALU + Registros)", d: "La Unidad Central de Proceso ejecuta las instrucciones. Integra la Unidad de Control (coordina), la ALU (opera) y los Registros (memoria ultrarrápida interna)." },
+    { t: "Salida", d: "Dispositivos que entregan resultados (monitor, impresora, bocinas). Transforman los datos procesados en información para el usuario." },
+    { t: "Memoria principal (RAM)", d: "Guarda datos e instrucciones del programa en ejecución. El CPU la lee y escribe constantemente; es volátil (se borra al apagar)." },
+    { t: "Buses del sistema", d: "Canales que comunican CPU, memoria y E/S. Se dividen en bus de datos, bus de direcciones y bus de control." }
   ];
   const SUBCPU = [
     { t: "Unidad de Control (UC)", d: "Interpreta cada instrucción y coordina a las demás unidades mediante señales de control; decide qué se hace y cuándo." },
@@ -1322,13 +1361,20 @@ initBuild();
       chk: { q: "¿Qué hace el POST?", a: "Un autodiagnóstico del hardware al encender." } }
   ];
 
+  let teoTab = "arq";
   function renderTheory() {
     const host = document.getElementById("modTeoria");
     host.innerHTML =
       `<h2 class="mod-head">1 · Introducción teórica</h2>
-       <p class="mod-sub">Conoce cada componente de la computadora: qué es, para qué sirve y lo que debes recordar. Toca una tarjeta para desplegar su explicación.</p>
+       <p class="mod-sub">Arquitectura de la computadora, jerarquía de memoria y cada componente. Elige un apartado.</p>
+       <div class="subtabs">
+         <button class="subtab is-active" data-t="arq">Arquitectura</button>
+         <button class="subtab" data-t="mem">Jerarquía de memoria</button>
+         <button class="subtab" data-t="comp">Componentes</button>
+       </div>
        <div id="teoContent"></div>`;
-    renderComp(document.getElementById("teoContent"));
+    host.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { teoTab = b.dataset.t; paintTeo(); }));
+    paintTeo();
   }
   function paintTeo() {
     document.querySelectorAll("#modTeoria .subtab").forEach(b => b.classList.toggle("is-active", b.dataset.t === teoTab));
@@ -1440,7 +1486,7 @@ initBuild();
   }
 
   /* =================================================================
-     MÓDULO 2 · CATÁLOGO (subtipos + comparativas + criterios)
+     MÓDULO 2 · CATÁLOGO
      ================================================================= */
   const CATALOG = [
     { name: "Gabinete", vis: "case", emoji: "🖥️", resumen: "Estructura, protección y factor de forma.",
@@ -1485,7 +1531,7 @@ initBuild();
     const host = document.getElementById("modCatalogo");
     host.innerHTML =
       `<h2 class="mod-head">2 · Catálogo de componentes</h2>
-       <p class="mod-sub">Ficha didáctica de cada componente con sus <strong>subtipos</strong>, una <strong>tabla comparativa</strong> y <strong>criterios de selección</strong>. Toca una tarjeta para abrir su ficha completa.</p>
+       <p class="mod-sub">Ficha de cada componente con sus <strong>subtipos</strong>, una <strong>tabla comparativa</strong> y <strong>criterios de selección</strong>. Toca una tarjeta para abrir su ficha.</p>
        <div class="card-grid" id="catGrid"></div>`;
     const grid = host.querySelector("#catGrid");
     CATALOG.forEach(c => {
@@ -1519,8 +1565,7 @@ initBuild();
     if (c.tabla) {
       html += `<div class="spec-sheet"><h4>Tipos y comparativa</h4><table class="cmp-table"><thead><tr>` +
         c.tabla.cols.map(x => `<th>${x}</th>`).join("") + `</tr></thead><tbody>` +
-        c.tabla.rows.map(r => `<tr>` + r.map(x => `<td>${x}</td>`).join("") + `</tr>`).join("") +
-        `</tbody></table></div>`;
+        c.tabla.rows.map(r => `<tr>` + r.map(x => `<td>${x}</td>`).join("") + `</tr>`).join("") + `</tbody></table></div>`;
     }
     if (c.elegir) {
       html += `<div class="spec-sheet"><h4>¿Cómo elegirlo?</h4><ul class="pick-list">` +
@@ -1532,33 +1577,40 @@ initBuild();
   }
 
   /* =================================================================
-     MÓDULO 4 y 6 · COMPATIBILIDAD (rigurosa) + DIAGNÓSTICO
-     Reglas: socket, tipo y capacidad de RAM, factor de forma, longitud
-     de GPU, altura del disipador, potencia y conectores de la fuente,
-     enfriamiento vs TDP, almacenamiento, video y cuello de botella.
+     MÓDULO 4 · COMPATIBILIDAD (rigurosa) + DIAGNÓSTICO
+     Reglas: socket, tipo/capacidad de RAM, overclock, factor de forma,
+     longitud de GPU, altura del disipador, potencia y conectores de la
+     fuente, enfriamiento vs TDP, almacenamiento, video y cuello de botella.
      ================================================================= */
   const PARTS = [
     { key: "case", label: "Gabinete", opts: [
       { n: "Full/Mid Tower ATX", supports: ["ATX", "mATX", "ITX"], maxGpu: 360, maxCooler: 170 },
       { n: "MicroATX", supports: ["mATX", "ITX"], maxGpu: 300, maxCooler: 155 },
       { n: "Mini-ITX", supports: ["ITX"], maxGpu: 250, maxCooler: 120 } ] },
-    { key: "mobo", label: "Tarjeta madre", opts: [
-      { n: "ATX X570 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ff: "ATX", ramMax: 128 },
-      { n: "ATX X670 · AM5 · DDR5", socket: "AM5", ram: "DDR5", ff: "ATX", ramMax: 128 },
-      { n: "ATX Z790 · LGA1700 · DDR5", socket: "LGA1700", ram: "DDR5", ff: "ATX", ramMax: 192 },
-      { n: "microATX B550 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ff: "mATX", ramMax: 128 } ] },
+    { key: "chipset", label: "Chipset", opts: [
+      { n: "AMD A520 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ramMax: 128, oc: false, pcie: "3.0", gama: "Básico" },
+      { n: "AMD B550 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ramMax: 128, oc: true, pcie: "4.0", gama: "Medio" },
+      { n: "AMD X570 · AM4 · DDR4", socket: "AM4", ram: "DDR4", ramMax: 128, oc: true, pcie: "4.0", gama: "Alto" },
+      { n: "AMD X670 · AM5 · DDR5", socket: "AM5", ram: "DDR5", ramMax: 128, oc: true, pcie: "5.0", gama: "Alto" },
+      { n: "Intel B660 · LGA1700 · DDR5", socket: "LGA1700", ram: "DDR5", ramMax: 128, oc: false, pcie: "4.0", gama: "Medio" },
+      { n: "Intel Z790 · LGA1700 · DDR5", socket: "LGA1700", ram: "DDR5", ramMax: 192, oc: true, pcie: "5.0", gama: "Alto" } ] },
+    { key: "mobo", label: "Formato de placa", opts: [
+      { n: "ATX (4 ranuras RAM)", ff: "ATX", ramMax: 192, slots: 4 },
+      { n: "microATX (4 ranuras RAM)", ff: "mATX", ramMax: 128, slots: 4 },
+      { n: "Mini-ITX (2 ranuras RAM)", ff: "ITX", ramMax: 64, slots: 2 } ] },
     { key: "cpu", label: "Procesador", opts: [
-      { n: "Ryzen 5 5600 · AM4 (65W)", socket: "AM4", tdp: 65, igpu: false, tier: 2 },
-      { n: "Ryzen 7 5700G · AM4 · iGPU (65W)", socket: "AM4", tdp: 65, igpu: true, tier: 2 },
-      { n: "Ryzen 7 7700 · AM5 · iGPU (65W)", socket: "AM5", tdp: 65, igpu: true, tier: 3 },
-      { n: "Intel i5-13400 · LGA1700 · iGPU (65W)", socket: "LGA1700", tdp: 65, igpu: true, tier: 2 },
-      { n: "Intel i7-13700K · LGA1700 (125W)", socket: "LGA1700", tdp: 125, igpu: true, tier: 4 } ] },
+      { n: "Ryzen 5 5600 · AM4 (65W)", socket: "AM4", tdp: 65, igpu: false, tier: 2, oc: false },
+      { n: "Ryzen 7 5700G · AM4 · iGPU (65W)", socket: "AM4", tdp: 65, igpu: true, tier: 2, oc: false },
+      { n: "Ryzen 7 7700 · AM5 · iGPU (65W)", socket: "AM5", tdp: 65, igpu: true, tier: 3, oc: false },
+      { n: "Intel i5-13400 · LGA1700 · iGPU (65W)", socket: "LGA1700", tdp: 65, igpu: true, tier: 2, oc: false },
+      { n: "Intel i7-13700K · LGA1700 (125W)", socket: "LGA1700", tdp: 125, igpu: true, tier: 4, oc: true } ] },
     { key: "ram", label: "Memoria RAM", opts: [
       { n: "16GB DDR4 3200", type: "DDR4", gb: 16 },
       { n: "32GB DDR4 3600", type: "DDR4", gb: 32 },
       { n: "16GB DDR5 5600", type: "DDR5", gb: 16 },
       { n: "64GB DDR5 6000", type: "DDR5", gb: 64 } ] },
     { key: "cooler", label: "Enfriamiento", opts: [
+      { n: "(sin disipador)", tdp: 0, h: 0 },
       { n: "Disipador stock (65W · 45mm)", tdp: 65, h: 45 },
       { n: "Torre de aire (220W · 160mm)", tdp: 220, h: 160 },
       { n: "Líquida AIO 240 (250W · radiador)", tdp: 250, h: 50 } ] },
@@ -1568,10 +1620,10 @@ initBuild();
       { n: "RTX 4070 (200W · 300mm · 1×8pin)", present: true, tdp: 200, len: 300, conn: 1, tier: 3 },
       { n: "RTX 4090 (450W · 340mm · 3×8pin)", present: true, tdp: 450, len: 340, conn: 3, tier: 5 } ] },
     { key: "storage", label: "Almacenamiento", opts: [
-      { n: "SSD NVMe 1TB", present: true },
-      { n: "SSD SATA 512GB", present: true },
-      { n: "HDD 2TB", present: true },
-      { n: "(ninguno)", present: false } ] },
+      { n: "SSD NVMe 1TB", present: true, nvme: true },
+      { n: "SSD SATA 512GB", present: true, nvme: false },
+      { n: "HDD 2TB", present: true, nvme: false },
+      { n: "(ninguno)", present: false, nvme: false } ] },
     { key: "psu", label: "Fuente de poder", opts: [
       { n: "450W · 1×PCIe 8pin", w: 450, pcie: 1 },
       { n: "650W · 2×PCIe 8pin", w: 650, pcie: 2 },
@@ -1583,12 +1635,13 @@ initBuild();
   function specText(key, o) {
     switch (key) {
       case "case": return `Placas ${o.supports.join("/")} · GPU ≤ ${o.maxGpu}mm · disipador ≤ ${o.maxCooler}mm`;
-      case "mobo": return `Socket ${o.socket} · ${o.ram} · ${o.ff} · RAM máx ${o.ramMax}GB`;
-      case "cpu": return `${o.socket} · TDP ${o.tdp}W · ${o.igpu ? "con iGPU" : "SIN iGPU"} · nivel ${o.tier}`;
+      case "chipset": return `Socket ${o.socket} · ${o.ram} · PCIe ${o.pcie} · ${o.oc ? "permite" : "sin"} overclock · gama ${o.gama}`;
+      case "mobo": return `Formato ${o.ff} · ${o.slots} ranuras · RAM máx ${o.ramMax}GB`;
+      case "cpu": return `${o.socket} · TDP ${o.tdp}W · ${o.igpu ? "con iGPU" : "SIN iGPU"}${o.oc ? " · desbloqueado" : ""} · nivel ${o.tier}`;
       case "ram": return `${o.type} · ${o.gb}GB`;
-      case "cooler": return `Disipa ${o.tdp}W · alto ${o.h}mm`;
+      case "cooler": return o.tdp === 0 ? "Sin sistema de enfriamiento" : `Disipa ${o.tdp}W · alto ${o.h}mm`;
       case "gpu": return o.present ? `Dedicada · ${o.tdp}W · ${o.len}mm · ${o.conn}×8pin · nivel ${o.tier}` : "Integrada (usa el iGPU del CPU)";
-      case "storage": return o.present ? "Unidad presente" : "Sin unidad";
+      case "storage": return o.present ? (o.nvme ? "SSD NVMe (bus PCIe)" : "Unidad SATA") : "Sin unidad";
       case "psu": return `${o.w}W · ${o.pcie}×PCIe 8pin`;
     }
     return "";
@@ -1597,7 +1650,7 @@ initBuild();
   function renderConfig() {
     const host = document.getElementById("modCompat");
     host.innerHTML =
-      `<h2 class="mod-head">4 · Compatibilidad y diagnóstico</h2>
+      `<h2 class="mod-head">4 · Reglas de compatibilidad</h2>
        <p class="mod-sub">Arma tu equipo eligiendo un modelo por componente. Al <strong>Probar encendido</strong> se validan la compatibilidad <em>física</em> (socket, RAM, factor de forma, longitud de GPU, altura del disipador), la <em>eléctrica/térmica</em> (potencia y conectores de la fuente, enfriamiento) y los <em>requisitos de funcionamiento</em>, con la explicación de cada regla y una nota de <strong>cuello de botella</strong>.</p>
        <div class="config-wrap">
          <div class="panel"><h2>Configuración</h2><div id="configRows"></div>
@@ -1625,7 +1678,6 @@ initBuild();
   }
 
   function opt(key) { const p = PARTS.find(x => x.key === key); return p.opts[sel[key]]; }
-
   function needWatts() { const c = opt("cpu"), g = opt("gpu"); return 120 + c.tdp + g.tdp; }
 
   function updateSummary() {
@@ -1634,9 +1686,7 @@ initBuild();
     const rec = Math.ceil((need * 1.3) / 50) * 50;
     document.getElementById("cfgSummary").innerHTML =
       `<h3>Resumen técnico</h3>
-       <table class="spec-table"><tbody>
-         ${PARTS.map(p => `<tr><td>${p.label}</td><td>${specText(p.key, opt(p.key))}</td></tr>`).join("")}
-       </tbody></table>
+       <table class="spec-table"><tbody>${PARTS.map(p => `<tr><td>${p.label}</td><td>${specText(p.key, opt(p.key))}</td></tr>`).join("")}</tbody></table>
        <h3 style="margin-top:12px">Consumo estimado</h3>
        <table class="spec-table"><tbody>
          <tr><td>Base (placa, discos, ventiladores)</td><td>120 W</td></tr>
@@ -1650,19 +1700,23 @@ initBuild();
   function runDiagnosis() {
     const out = document.getElementById("modCompat").querySelector("#diagOut");
     const cpu = opt("cpu"), mobo = opt("mobo"), ram = opt("ram"), cooler = opt("cooler"),
-          gpu = opt("gpu"), storage = opt("storage"), psu = opt("psu"), casev = opt("case");
+          gpu = opt("gpu"), storage = opt("storage"), psu = opt("psu"), casev = opt("case"), chip = opt("chipset");
+    const ramMax = Math.min(chip.ramMax, mobo.ramMax);
     const groups = [];
 
     const fis = [];
-    fis.push(cpu.socket === mobo.socket
-      ? { s: "ok", t: `Socket compatible (${cpu.socket}).`, w: "El socket del CPU debe coincidir físicamente con el de la placa." }
-      : { s: "bad", t: `CPU incompatible: socket ${cpu.socket} ≠ ${mobo.socket} de la placa.`, w: "Un CPU sólo encaja en placas con su mismo socket (AM4, AM5, LGA1700…)." });
-    fis.push(ram.type === mobo.ram
-      ? { s: "ok", t: `RAM ${ram.type} compatible con la placa.`, w: "La muesca y el bus difieren entre DDR4 y DDR5; deben coincidir." }
-      : { s: "bad", t: `RAM no detectada: la placa usa ${mobo.ram} y elegiste ${ram.type}.`, w: "DDR4 y DDR5 no son intercambiables físicamente." });
-    fis.push(ram.gb <= mobo.ramMax
-      ? { s: "ok", t: `Capacidad de RAM dentro del límite (${ram.gb} ≤ ${mobo.ramMax} GB).`, w: "Cada placa admite una capacidad máxima de memoria." }
-      : { s: "bad", t: `Demasiada RAM: ${ram.gb} GB supera el máximo de la placa (${mobo.ramMax} GB).`, w: "El controlador de memoria y la placa limitan la capacidad total." });
+    fis.push(cpu.socket === chip.socket
+      ? { s: "ok", t: `Socket compatible (${cpu.socket}).`, w: "El chipset determina el socket de la placa, y el CPU debe coincidir con él." }
+      : { s: "bad", t: `CPU incompatible: socket ${cpu.socket} ≠ ${chip.socket} del chipset ${chip.n.split(" ·")[0]}.`, w: "Cada chipset se fabrica para un socket concreto: un Ryzen AM4 no entra en una placa Intel LGA1700." });
+    fis.push(ram.type === chip.ram
+      ? { s: "ok", t: `RAM ${ram.type} compatible con el chipset.`, w: "El controlador de memoria del chipset define si la placa acepta DDR4 o DDR5." }
+      : { s: "bad", t: `RAM no detectada: el chipset admite ${chip.ram} y elegiste ${ram.type}.`, w: "DDR4 y DDR5 tienen la muesca en distinta posición: no son intercambiables." });
+    fis.push(ram.gb <= ramMax
+      ? { s: "ok", t: `Capacidad de RAM dentro del límite (${ram.gb} ≤ ${ramMax} GB).`, w: "El límite real es el menor entre lo que admite el chipset y las ranuras del formato." }
+      : { s: "bad", t: `Demasiada RAM: ${ram.gb} GB supera el máximo de esta combinación (${ramMax} GB).`, w: `El chipset admite hasta ${chip.ramMax} GB y el formato ${mobo.ff} llega a ${mobo.ramMax} GB con sus ${mobo.slots} ranuras.` });
+    fis.push(!cpu.oc || chip.oc
+      ? { s: "ok", t: cpu.oc ? `El chipset ${chip.gama.toLowerCase()} permite overclock del CPU desbloqueado.` : "Configuración de frecuencias correcta.", w: "Solo los chipsets de gama alta (Z, X) permiten subir la frecuencia del procesador." }
+      : { s: "info", t: `Overclock no disponible: el CPU está desbloqueado pero el chipset no lo permite.`, w: "El equipo funciona, pero pagaste por un CPU desbloqueado que no podrás aprovechar. Sería mejor un chipset Z790 o X." });
     fis.push(casev.supports.indexOf(mobo.ff) !== -1
       ? { s: "ok", t: `Factor de forma correcto: placa ${mobo.ff} entra en el gabinete.`, w: "El gabinete debe soportar el tamaño de la placa (ATX > microATX > ITX)." }
       : { s: "bad", t: `La placa (${mobo.ff}) no cabe en el gabinete.`, w: "Un gabinete pequeño no admite placas más grandes." });
@@ -1682,7 +1736,10 @@ initBuild();
     if (gpu.present) ele.push(psu.pcie >= gpu.conn
       ? { s: "ok", t: `Conectores PCIe suficientes (${psu.pcie} ≥ ${gpu.conn} que pide la GPU).`, w: "La GPU necesita cables PCIe de 8 pines desde la fuente." }
       : { s: "bad", t: `Faltan conectores: la GPU pide ${gpu.conn}×8pin y la fuente tiene ${psu.pcie}.`, w: "Sin los conectores PCIe correctos la GPU no recibe energía." });
-    ele.push(cooler.tdp >= cpu.tdp
+    if (cooler.tdp === 0)
+      ele.push({ s: "bad", t: `Sin enfriamiento: el procesador no tiene disipador y genera ${cpu.tdp} W de calor.`, w: "Sin disipador el CPU alcanza su temperatura crítica en segundos y la placa corta la energía para protegerlo." });
+    else
+      ele.push(cooler.tdp >= cpu.tdp
       ? { s: "ok", t: `Enfriamiento suficiente para ${cpu.tdp} W.`, w: "El disipador debe poder disipar al menos el TDP del CPU." }
       : { s: "bad", t: `Enfriamiento insuficiente: disipa ${cooler.tdp} W y el CPU genera ${cpu.tdp} W.`, w: "Un disipador corto provoca throttling o sobrecalentamiento." });
     groups.push({ title: "Compatibilidad eléctrica y térmica", checks: ele });
@@ -1696,7 +1753,6 @@ initBuild();
       : { s: "bad", t: "Sin video: el CPU no tiene iGPU y no hay GPU.", w: "Sin fuente de video no hay imagen en pantalla." });
     groups.push({ title: "Requisitos de funcionamiento", checks: req });
 
-    // Cuello de botella
     const notes = [];
     if (gpu.present) {
       const diff = gpu.tier - cpu.tier;
@@ -1719,7 +1775,7 @@ initBuild();
   }
 
   /* =================================================================
-     MÓDULO 7 · AUTOEVALUACIÓN
+     MÓDULO 5 · AUTOEVALUACIÓN
      ================================================================= */
   const POOL = [
     { type: "mc", q: "¿Qué componente ejecuta las instrucciones del sistema?", opts: ["El procesador (CPU)", "La memoria RAM", "La fuente de poder", "El gabinete"], correct: 0, fb: "El CPU es el 'cerebro': ejecuta el ciclo de instrucción." },
@@ -1777,12 +1833,9 @@ initBuild();
 
     if (item.type === "mc") {
       const order = shuffle(item.opts.map((_, i) => i));
-      body = `<div class="q-options">` + order.map(i =>
-        `<button class="q-opt" data-i="${i}">${item.opts[i]}</button>`).join("") + `</div>`;
+      body = `<div class="q-options">` + order.map(i => `<button class="q-opt" data-i="${i}">${item.opts[i]}</button>`).join("") + `</div>`;
     } else if (item.type === "tf") {
-      body = `<div class="q-options">
-        <button class="q-opt" data-i="true">Verdadero</button>
-        <button class="q-opt" data-i="false">Falso</button></div>`;
+      body = `<div class="q-options"><button class="q-opt" data-i="true">Verdadero</button><button class="q-opt" data-i="false">Falso</button></div>`;
     } else if (item.type === "order") {
       const idxs = shuffle(item.items.map((_, i) => i));
       if (idxs.every((v, k) => v === item.correct[k])) { const t = idxs[0]; idxs[0] = idxs[1]; idxs[1] = t; }
@@ -1791,8 +1844,7 @@ initBuild();
     } else if (item.type === "match") {
       const optOrder = shuffle(item.answers.map((_, j) => j));
       const optsHtml = optOrder.map(j => `<option value="${j}">${item.answers[j]}</option>`).join("");
-      body = item.terms.map((t, i) =>
-        `<div class="q-match-row"><span class="m-term">${t}</span><select data-i="${i}"><option value="-1">— elige —</option>${optsHtml}</select></div>`).join("");
+      body = item.terms.map((t, i) => `<div class="q-match-row"><span class="m-term">${t}</span><select data-i="${i}"><option value="-1">— elige —</option>${optsHtml}</select></div>`).join("");
     }
 
     wrap.innerHTML =
@@ -1882,7 +1934,7 @@ initBuild();
   }
 
   /* =================================================================
-     MÓDULO 6 · GLOSARIO
+     MÓDULO 6 · GLOSARIO (buscable)
      ================================================================= */
   const GLOSSARY = [
     ["ALU", "Unidad Aritmético-Lógica: realiza operaciones aritméticas y lógicas dentro del CPU."],
@@ -1929,7 +1981,7 @@ initBuild();
     paint("");
   }
 
-  /* ---------------- Arranque ---------------- */
+  /* ---------------- Arranque de módulos ---------------- */
   setupModuleNav();
   renderTheory();
   renderCatalog();
@@ -1938,57 +1990,26 @@ initBuild();
   renderGlossary();
 
   /* =================================================================
-   PC BUILDER · MENÚ PRINCIPAL (dashboard de inicio)
-   -----------------------------------------------------------------
-   Crea una pantalla de inicio con barra lateral + tarjetas de modos
-   y la conecta con los módulos que YA existen en el proyecto:
-     modTeoria · modCatalogo · modEnsamble · modCompat · modQuiz · modGloss
-   No modifica tu lógica; solo agrega la pantalla y la navegación.
-   Requiere: index.html con <div class="app"> y <nav id="modNav">.
-   ================================================================= */
-(function () {
-  "use strict";
-
-  /* Inyecta la hoja de estilos del menú */
+     MENÚ PRINCIPAL (inicio con tarjetas)
+     · Oculta la barra de módulos de arriba y deja SOLO 🏠 Inicio.
+     ================================================================= */
   if (!document.querySelector('link[data-pb-home]')) {
     const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "./home.css";
-    link.setAttribute("data-pb-home", "1");
+    link.rel = "stylesheet"; link.href = "./home.css"; link.setAttribute("data-pb-home", "1");
     document.head.appendChild(link);
   }
 
-  /* Tarjetas de modo -> módulo destino existente */
   const MODES = [
-    { mod: "modEnsamble", icon: "🖥️", color: "#3aa0ff", title: "Ensamblaje",
-      desc: "Arma tu PC paso a paso arrastrando cada componente a su lugar." },
-    { mod: "modTeoria",   icon: "🎓", color: "#3ddc84", title: "Modo estudio",
-      desc: "Aprende la arquitectura de la computadora de forma interactiva." },
-    { mod: "modCatalogo", icon: "🧩", color: "#b98cff", title: "Catálogo",
-      desc: "Explora cada componente: tipos, comparativas y cómo elegirlo." },
-    { mod: "modCompat",   icon: "⚙️", color: "#ffb340", title: "Compatibilidad",
-      desc: "Configura un equipo y comprueba si enciende, con el porqué de cada regla." },
-    { mod: "modQuiz",     icon: "📝", color: "#ff5d6c", title: "Autoevaluación",
-      desc: "Pon a prueba lo aprendido con un cuestionario que cambia cada intento." },
-    { mod: "modGloss",    icon: "📚", color: "#33c9ff", title: "Biblioteca",
-      desc: "Consulta el glosario con los términos clave del hardware." }
+    { mod: "modEnsamble", icon: "🖥️", color: "#3aa0ff", title: "Ensamblaje", desc: "Arma tu PC paso a paso arrastrando cada componente a su lugar." },
+    { mod: "modTeoria",   icon: "🎓", color: "#3ddc84", title: "Modo estudio", desc: "Aprende la arquitectura de la computadora de forma interactiva." },
+    { mod: "modCatalogo", icon: "🧩", color: "#b98cff", title: "Catálogo", desc: "Explora cada componente: tipos, comparativas y cómo elegirlo." },
+    { mod: "modDiag",     icon: "🩺", color: "#ff8c42", title: "Diagnóstico de errores", desc: "Enciende equipos con fallas, lee los síntomas del POST y repáralos." },
+    { mod: "modCompat",   icon: "⚙️", color: "#ffb340", title: "Compatibilidad", desc: "Configura un equipo y comprueba si enciende, con el porqué de cada regla." },
+    { mod: "modQuiz",     icon: "📝", color: "#ff5d6c", title: "Autoevaluación", desc: "Pon a prueba lo aprendido con un cuestionario que cambia cada intento." },
+    { mod: "modGloss",    icon: "📚", color: "#33c9ff", title: "Biblioteca", desc: "Consulta el glosario con los términos clave del hardware." }
   ];
 
-  /* Menú lateral */
-  const MENU = [
-    /* { key: "inicio",      icon: "🏠", label: "Inicio" },
-    { key: "modEnsamble", icon: "🖥️", label: "Ensamblar" },
-    { key: "modTeoria",   icon: "🎓", label: "Estudiar" },
-    { key: "modQuiz",     icon: "📝", label: "Evaluación" },
-    { key: "modGloss",    icon: "📚", label: "Glosario" },
-    { key: "config",      icon: "⚙️", label: "Configuración" } */
-  ];
-
-  function toast(msg) {
-    if (typeof window.showToast === "function") window.showToast(msg);
-  }
-
-  function build() {
+  function buildHome() {
     const app = document.querySelector(".app");
     if (!app || document.getElementById("homeRoot")) return;
 
@@ -2000,99 +2021,56 @@ initBuild();
         <span class="pb-card-go" aria-hidden="true">→</span>
       </button>`).join("");
 
-    const menuHTML = MENU.map((it, i) => `
-      <button class="pb-menu-item${i === 0 ? " is-active" : ""}" data-menu="${it.key}" type="button">
-        <span class="pb-mi-ico">${it.icon}</span>${it.label}
-      </button>`).join("");
-
     const root = document.createElement("div");
     root.id = "homeRoot";
     root.innerHTML = `
       <aside class="pb-side">
         <div class="pb-avatar">👤</div>
         <div class="pb-user"><h2>Estudiante</h2><span>Nivel 1</span></div>
-
         <div class="pb-progress">
           <div class="pb-progress-top"><span>Progreso del montaje</span><strong id="pbProgPct">0%</strong></div>
           <div class="pb-bar"><span id="pbProgFill"></span></div>
         </div>
-
-        <p class="pb-menu-title">Menú</p>
-        <nav class="pb-menu">${menuHTML}</nav>
       </aside>
-
       <main class="pb-main">
-        <button class="pb-help" type="button" data-menu="ayuda">? Ayuda</button>
-
-        <div class="pb-hero">
-          <div class="pb-logo-chip">🔧</div>
-          <h1>PC<b>Builder</b></h1>
-        </div>
+        <div class="pb-hero"><div class="pb-logo-chip">🔧</div><h1>PC<b>Builder</b></h1></div>
         <div class="pb-divider">Elige un modo para comenzar</div>
-
         <div class="pb-cards">${cardsHTML}</div>
       </main>`;
-
     app.prepend(root);
 
-    /* Tarjetas -> abrir módulo */
-    root.querySelectorAll("[data-goto]").forEach(el =>
-      el.addEventListener("click", () => openMode(el.dataset.goto)));
+    root.querySelectorAll("[data-goto]").forEach(el => el.addEventListener("click", () => openMode(el.dataset.goto)));
 
-    /* Menú lateral */
-    root.querySelectorAll("[data-menu]").forEach(el =>
-      el.addEventListener("click", () => menuAction(el.dataset.menu, el)));
-
-    /* Botón "Inicio" dentro de la barra de módulos para poder regresar */
+    // Botón 🏠 Inicio dentro de la barra de módulos + ocultar los demás botones
     const nav = document.getElementById("modNav");
-    if (nav && !document.getElementById("pbHomeBtn")) {
-      const b = document.createElement("button");
-      b.id = "pbHomeBtn";
-      b.className = "modnav-btn";
-      b.type = "button";
-      b.innerHTML = "🏠 Inicio";
-      b.addEventListener("click", goHome);
-      nav.prepend(b);
+    if (nav) {
+      if (!document.getElementById("pbHomeBtn")) {
+        const b = document.createElement("button");
+        b.id = "pbHomeBtn"; b.className = "modnav-btn"; b.type = "button";
+        b.innerHTML = "🏠 Inicio";
+        b.addEventListener("click", goHome);
+        nav.prepend(b);
+      }
+      // Deja SOLO el botón de Inicio visible en la barra de arriba
+      nav.querySelectorAll(".modnav-btn").forEach(b => { if (b.id !== "pbHomeBtn") b.style.display = "none"; });
     }
 
-    goHome(); // arrancar en la pantalla de inicio
+    goHome();
   }
 
-  /* Abre un módulo existente (replica el comportamiento de modNav) */
   function openMode(modId) {
     document.body.classList.remove("pb-home-active");
-    document.querySelectorAll(".modnav-btn").forEach(b =>
-      b.classList.toggle("is-active", b.dataset.mod === modId));
-    document.querySelectorAll(".module").forEach(m =>
-      m.classList.toggle("is-active", m.id === modId));
+    document.querySelectorAll(".modnav-btn").forEach(b => b.classList.toggle("is-active", b.dataset.mod === modId));
+    document.querySelectorAll(".module").forEach(m => m.classList.toggle("is-active", m.id === modId));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function goHome() {
     document.body.classList.add("pb-home-active");
-    // resaltar "Inicio" en el menú lateral
-    document.querySelectorAll('.pb-menu-item').forEach(el =>
-      el.classList.toggle("is-active", el.dataset.menu === "inicio"));
     updateProgress();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function menuAction(key, el) {
-    if (key === "inicio") { goHome(); return; }
-    if (key === "ayuda") {
-      toast("Elige una tarjeta para entrar a un modo. Usa 🏠 Inicio para volver aquí.");
-      return;
-    }
-    if (key === "config") {
-      const sb = document.getElementById("soundBtn");
-      if (sb) sb.click();
-      else toast("Ajustes disponibles dentro de cada módulo.");
-      return;
-    }
-    openMode(key); // es un id de módulo (modEnsamble, modTeoria, ...)
-  }
-
-  /* Progreso = avance real del ensamblaje (usa funciones globales del script) */
   function updateProgress() {
     let pct = 0;
     try {
@@ -2100,16 +2078,252 @@ initBuild();
         const total = effectiveTotal();
         if (total > 0) pct = Math.round((effectivePlaced() / total) * 100);
       }
-    } catch (e) { /* si aún no está listo, queda en 0% */ }
+    } catch (e) {}
     const fill = document.getElementById("pbProgFill");
     const lbl = document.getElementById("pbProgPct");
     if (fill) fill.style.width = pct + "%";
     if (lbl) lbl.textContent = pct + "%";
   }
 
-  if (document.readyState === "loading")
-    document.addEventListener("DOMContentLoaded", build);
-  else
-    build();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", buildHome);
+  else buildHome();
+
 })();
+
+
+/* =================================================================
+   =========   MÓDULO 3 · DIAGNÓSTICO DE ERRORES (POST)   =========
+   Laboratorio: se enciende un equipo con una falla, el alumno observa
+   los síntomas (beeps/LED/pantalla), deduce la CAUSA y aplica el ARREGLO.
+   -----------------------------------------------------------------
+   Va en su propia IIFE (aparte de los otros módulos) para mantener su
+   estado —lote de casos, caso actual, aciertos— bien separado.
+   Flujo de un caso:  runPost → askCause → askFix → closeCase → siguiente.
+   ================================================================= */
+(function () {
+  const host = document.getElementById("modDiag");
+  if (!host) return;
+
+  /* Cada caso: equipo, síntoma visible, señal POST, causa, arreglo y teoría. */
+  const CASES = [
+    { id: "ram", nombre: "Equipo A", falla: "Sin imagen y pitidos largos repetidos",
+      post: { pantalla: "negra", beeps: "1 pitido largo repetido", led: "DRAM (rojo) encendido" },
+      causa: "La memoria RAM está mal asentada o no es compatible.",
+      opcionesCausa: ["Memoria RAM mal instalada o incompatible", "Disco duro dañado", "Falta el sistema operativo", "El monitor está apagado"],
+      fix: "Reasentar la RAM en A2/B2 hasta oír el clic y verificar que sea del tipo correcto (DDR).",
+      opcionesFix: ["Reasentar la RAM y verificar su tipo (DDR)", "Formatear el disco", "Reinstalar Windows", "Cambiar el cable HDMI"],
+      teoria: "El POST prueba la RAM antes que nada. El LED DRAM y un pitido largo repetido son el código típico de fallo de memoria: sin RAM válida el CPU no puede continuar." },
+
+    { id: "cpu", nombre: "Equipo B", falla: "Los ventiladores giran un instante y se apaga",
+      post: { pantalla: "negra", beeps: "sin pitidos", led: "CPU (rojo) encendido" },
+      causa: "Falta el cable de alimentación EPS del CPU (8 pines).",
+      opcionesCausa: ["Falta el cable EPS de 8 pines del CPU", "La RAM está llena", "El teclado no responde", "Falta el driver de la GPU"],
+      fix: "Conectar el EPS de 8 pines en el cabezal superior izquierdo de la placa.",
+      opcionesFix: ["Conectar el cable EPS del CPU", "Actualizar el navegador", "Cambiar el mouse", "Desfragmentar el disco"],
+      teoria: "El CPU se alimenta por el conector EPS, aparte del ATX de 24 pines. Sin EPS, la placa intenta arrancar y corta de inmediato (encendido de un segundo) y marca el LED de CPU." },
+
+    { id: "psu", nombre: "Equipo C", falla: "No enciende absolutamente nada",
+      post: { pantalla: "negra", beeps: "ninguno", led: "todos apagados" },
+      causa: "La fuente no entrega energía: interruptor apagado o ATX de 24 pines desconectado.",
+      opcionesCausa: ["Fuente apagada o ATX 24-pin desconectado", "El monitor está en otra entrada", "La RAM es lenta", "El SSD está lleno"],
+      fix: "Encender el interruptor de la fuente y conectar el ATX de 24 pines a la placa.",
+      opcionesFix: ["Encender la fuente y conectar el ATX 24-pin", "Bajar el brillo", "Cambiar de navegador", "Borrar archivos temporales"],
+      teoria: "Sin el ATX de 24 pines (o con la fuente apagada) la placa no recibe energía principal: no hay LEDs, ni ventiladores, ni POST. Es el primer punto a revisar cuando 'no enciende nada'." },
+
+    { id: "storage", nombre: "Equipo D", falla: "Enciende pero dice 'No bootable device'",
+      post: { pantalla: "mensaje: No bootable device", beeps: "1 pitido corto (POST OK)", led: "ninguno" },
+      causa: "El disco con el sistema operativo no está conectado o no se detecta.",
+      opcionesCausa: ["El disco del SO no está conectado/detectado", "La GPU está floja", "La RAM es insuficiente", "El disipador está sucio"],
+      fix: "Conectar los cables SATA de datos y de poder del disco (o revisar el M.2) y fijar el orden de arranque.",
+      opcionesFix: ["Conectar datos+poder del disco y revisar el orden de arranque", "Cambiar la fuente", "Reasentar la GPU", "Aplicar pasta térmica"],
+      teoria: "Un pitido corto indica POST correcto: el hardware básico funciona. 'No bootable device' significa que no encuentra un disco con SO; casi siempre es un cable SATA suelto o el orden de arranque." },
+
+    { id: "cooling", nombre: "Equipo E", falla: "Arranca y se apaga a los segundos; se siente caliente",
+      post: { pantalla: "a veces llega al logo y se apaga", beeps: "1 corto y luego apagado", led: "CPU (temperatura)" },
+      causa: "Falta pasta térmica o el disipador está mal montado (sobrecalentamiento).",
+      opcionesCausa: ["Disipador mal montado / sin pasta térmica", "Falta RAM", "El cable HDMI está flojo", "El SSD está lleno"],
+      fix: "Aplicar pasta térmica y montar bien el disipador; conectar su ventilador al CPU_FAN.",
+      opcionesFix: ["Aplicar pasta y asentar el disipador + CPU_FAN", "Cambiar el monitor", "Reinstalar el SO", "Añadir otro disco"],
+      teoria: "Si el CPU supera su temperatura crítica, la placa lo apaga para protegerlo. Sin pasta o con el disipador flojo, la temperatura se dispara en segundos: apagones al arrancar." },
+
+    { id: "video", nombre: "Equipo F", falla: "POST correcto pero la pantalla dice 'Sin señal'",
+      post: { pantalla: "Sin señal", beeps: "1 pitido corto (POST OK)", led: "VGA (blanco) parpadea" },
+      causa: "El monitor está conectado a la placa teniendo una GPU dedicada instalada.",
+      opcionesCausa: ["El monitor está conectado a la placa, no a la GPU", "El teclado está desconectado", "La fuente es de pocos watts", "El disco está dañado"],
+      fix: "Pasar el cable de video a una salida de la tarjeta gráfica.",
+      opcionesFix: ["Conectar el monitor a la salida de la GPU", "Cambiar la RAM", "Reinstalar drivers de red", "Cambiar el gabinete"],
+      teoria: "Con una GPU dedicada, las salidas de video de la placa se desactivan (salvo que se configure lo contrario). Por eso hay POST pero 'sin señal': el cable está en el puerto equivocado." },
+
+    { id: "monitor", nombre: "Equipo G", falla: "Todo enciende pero el monitor sigue en negro",
+      post: { pantalla: "negra (monitor)", beeps: "1 pitido corto (POST OK)", led: "ninguno" },
+      causa: "El monitor está apagado o en una entrada (HDMI/DP) equivocada.",
+      opcionesCausa: ["Monitor apagado o en la entrada equivocada", "Falta el procesador", "La RAM está incompleta", "El EPS está suelto"],
+      fix: "Encender el monitor y seleccionar la entrada correcta (source: HDMI/DP).",
+      opcionesFix: ["Encender el monitor y elegir la entrada correcta", "Reasentar el CPU", "Añadir más RAM", "Conectar el EPS"],
+      teoria: "Un POST correcto con la torre encendida apunta al periférico: el monitor debe estar encendido y con la fuente de entrada (source) correcta seleccionada." },
+
+    { id: "eps", nombre: "Equipo H", falla: "Enciende, LED de placa fijo, sin POST",
+      post: { pantalla: "negra", beeps: "ninguno", led: "CPU (rojo) fijo" },
+      causa: "Cable EPS del CPU parcialmente conectado (solo 4 de 8 pines).",
+      opcionesCausa: ["El EPS del CPU está a medias (4/8 pines)", "El monitor está en negro", "Falta el disco duro", "El USB frontal está suelto"],
+      fix: "Insertar por completo el conector EPS de 8 pines hasta el clic.",
+      opcionesFix: ["Insertar completo el EPS de 8 pines", "Cambiar el HDMI", "Formatear el SSD", "Reinstalar el mouse"],
+      teoria: "Un EPS a medias entrega energía insuficiente al VRM del CPU: la placa enciende pero no completa el POST y deja el LED de CPU fijo." },
+
+    { id: "ok", nombre: "Equipo I", falla: "Un pitido corto y llega al sistema operativo",
+      post: { pantalla: "logo y arranque del SO", beeps: "1 pitido corto", led: "ninguno" },
+      causa: "No hay falla: el POST fue exitoso y el equipo arranca correctamente.",
+      opcionesCausa: ["No hay falla: arranque correcto", "La RAM está mal", "Falta el video", "La fuente es insuficiente"],
+      fix: "Ninguna acción: el sistema está sano y operativo.",
+      opcionesFix: ["No hacer nada: el equipo está sano", "Reasentar la RAM", "Conectar el EPS", "Cambiar la fuente"],
+      teoria: "Un único pitido corto es la señal de POST correcto en la mayoría de placas: todo el hardware esencial respondió y se procede a cargar el sistema operativo." }
+  ];
+
+  const N_CASOS = 6;
+  let lote = [], idx = 0, aciertos = 0;
+  let casoCausaOk = false;   // ¿acertó la causa del caso actual?
+
+  function startLab() {
+    lote = CASES.slice();
+    for (let i = lote.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [lote[i], lote[j]] = [lote[j], lote[i]]; }
+    lote = lote.slice(0, N_CASOS);
+    idx = 0; aciertos = 0;
+    renderCase();
+  }
+
+  function renderCase() {
+    if (idx >= lote.length) return renderReport();
+    etapa = "causa";
+    const c = lote[idx];
+    host.innerHTML =
+      `<h2 class="mod-head">3 · Diagnóstico de errores</h2>
+       <p class="mod-sub">Enciende un equipo con una posible falla, observa los síntomas del POST, deduce la <strong>causa</strong> y aplica el <strong>arreglo</strong>. Caso ${idx + 1} de ${lote.length} · Aciertos: ${aciertos}</p>
+       <div class="diag-lab">
+         <div class="panel post-screen" id="postScreen">
+           <div class="post-top"><span class="post-name">${c.nombre}</span><button class="primary-btn" id="postBtn" style="width:auto">⏻ Encender</button></div>
+           <div class="post-body" id="postBody"><p class="small-text">Pulsa “Encender” para ejecutar el POST y observar los síntomas.</p></div>
+         </div>
+         <div class="panel" id="diagQ"><p class="small-text">Primero enciende el equipo y observa qué ocurre.</p></div>
+       </div>`;
+    host.querySelector("#postBtn").addEventListener("click", () => runPost(c));
+  }
+
+  function runPost(c) {
+    const body = host.querySelector("#postBody");
+    const btn = host.querySelector("#postBtn");
+    btn.disabled = true; btn.textContent = "Ejecutando…";
+    body.innerHTML = `<div class="post-line">Iniciando POST…</div>`;
+    if (typeof sfxPower === "function") try { sfxPower(); } catch (e) {}
+
+    const lines = [
+      "Comprobando fuente de poder…",
+      "Detectando CPU…",
+      "Contando memoria RAM…",
+      "Inicializando video…",
+      "Buscando dispositivo de arranque…"
+    ];
+    let i = 0;
+    const t = setInterval(() => {
+      body.insertAdjacentHTML("beforeend", `<div class="post-line">${lines[i]}</div>`);
+      i++;
+      if (i >= lines.length) {
+        clearInterval(t);
+        setTimeout(() => {
+          const ok = c.id === "ok";
+          if (!ok && typeof sfxError === "function") try { sfxError(); } catch (e) {}
+          body.insertAdjacentHTML("beforeend",
+            `<div class="post-result ${ok ? "ok" : "bad"}">
+               <div class="post-blink ${ok ? "" : "red"}"></div>
+               <div>
+                 <strong>${c.falla}</strong>
+                 <ul class="post-signals">
+                   <li>🖥️ Pantalla: ${c.post.pantalla}</li>
+                   <li>🔊 Pitidos: ${c.post.beeps}</li>
+                   <li>💡 LED de la placa: ${c.post.led}</li>
+                 </ul>
+               </div>
+             </div>`);
+          btn.textContent = "POST ejecutado"; 
+          askCause(c);
+        }, 380);
+      }
+    }, 430);
+  }
+
+  function block(titulo, ayuda, opciones, onPick) {
+    const q = host.querySelector("#diagQ");
+    q.innerHTML = `<h2>${titulo}</h2><p class="small-text">${ayuda}</p><div class="diag-opts"></div><div id="diagFb"></div>`;
+    const wrap = q.querySelector(".diag-opts");
+    const orden = opciones.map((o, i) => ({ o, i }));
+    for (let i = orden.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [orden[i], orden[j]] = [orden[j], orden[i]]; }
+    orden.forEach(({ o, i }) => {
+      const b = document.createElement("button");
+      b.className = "diag-opt"; b.textContent = o;
+      b.addEventListener("click", () => { if (!b.disabled) onPick(i, wrap, b); });
+      wrap.appendChild(b);
+    });
+  }
+
+  function askCause(c) {
+    block("Paso 1 · ¿Cuál es la causa?",
+      "Con base en los síntomas del POST, elige la explicación más probable.",
+      c.opcionesCausa, (elegido, wrap, btn) =>
+        wireOptions(wrap, btn, elegido, c.opcionesCausa[0], "causa", c.causa, () => askFix(c)));
+  }
+
+  function askFix(c) {
+    block("Paso 2 · ¿Cómo se arregla?",
+      "Ya identificaste la causa. Ahora elige la acción correcta para solucionarla.",
+      c.opcionesFix, (elegido, wrap, btn) =>
+        wireOptions(wrap, btn, elegido, c.opcionesFix[0], "fix", c.fix, () => closeCase(c)));
+  }
+
+  /* La opción correcta siempre es la de índice 0 del arreglo original.
+     'elegido' es ese índice original del botón pulsado. */
+  function wireOptions(wrap, btn, elegido, textoCorrecto, paso, explicacion, next) {
+    const fb = host.querySelector("#diagFb");
+    const btns = [...wrap.querySelectorAll(".diag-opt")];
+    btns.forEach(b => b.disabled = true);
+
+    const bien = (elegido === 0);
+    btns.forEach(b => { if (b.textContent === textoCorrecto) b.classList.add("correct"); });
+    if (!bien) btn.classList.add("wrong");
+
+    if (paso === "causa") casoCausaOk = bien;
+    else if (bien && casoCausaOk) aciertos++;   // el caso cuenta si acertó causa Y arreglo
+
+    fb.className = "q-feedback " + (bien ? "ok" : "bad");
+    fb.innerHTML = (bien ? "✅ Correcto. " : "❌ No es lo más probable. ") + explicacion;
+
+    const cont = document.createElement("button");
+    cont.className = "view-btn"; cont.style.marginTop = "12px"; cont.textContent = "Continuar ▸";
+    cont.addEventListener("click", next);
+    fb.appendChild(cont);
+  }
+
+  function closeCase(c) {
+    // Mostrar teoría del caso antes de pasar al siguiente
+    const q = host.querySelector("#diagQ");
+    q.innerHTML =
+      `<h2>¿Por qué ocurre?</h2>
+       <div class="clave" style="--accent:#7ed7ff">${c.teoria}</div>
+       <div class="q-feedback ok" style="margin-top:12px"><strong>Causa:</strong> ${c.causa}<br><strong>Solución:</strong> ${c.fix}</div>
+       <button class="primary-btn" id="nextCase" style="width:auto;margin-top:14px">${idx + 1 >= lote.length ? "Ver resultados" : "Siguiente equipo ▸"}</button>`;
+    q.querySelector("#nextCase").addEventListener("click", () => { idx++; renderCase(); });
+  }
+
+  function renderReport() {
+    const pct = Math.round(aciertos / lote.length * 100);
+    host.innerHTML =
+      `<h2 class="mod-head">3 · Diagnóstico de errores</h2>
+       <div class="q-card quiz-result">
+         <div class="score">${aciertos} / ${lote.length}</div>
+         <p style="font-size:20px;margin:6px 0 4px">${pct}% de diagnósticos correctos</p>
+         <p class="small-text" style="margin-bottom:16px">${pct >= 80 ? "¡Gran técnico! Identificas fallas de POST con soltura." : pct >= 50 ? "Bien. Repasa los códigos de POST (beeps y LEDs) para afinar." : "Repasa el módulo de teoría y los síntomas del POST."}</p>
+         <button id="labRetry" class="primary-btn" style="width:auto">Nuevos casos</button>
+       </div>`;
+    host.querySelector("#labRetry").addEventListener("click", startLab);
+  }
+
+  startLab();
 })();
