@@ -1079,7 +1079,7 @@ function applyTransform() {
 }
 function changeView(view) {
   const p = PRESETS[view]; if (!p) return;
-  rotX = p[0]; rotZ = p[1]; zoom = p[2]; panX = 0; panY = 0;
+  rotX = p[0]; rotZ = p[1]; zoom = p[2]; panX = -200; panY = 0;
   applyTransform();
   document.querySelectorAll(".view-btn[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));
 }
