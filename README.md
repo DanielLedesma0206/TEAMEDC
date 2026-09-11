@@ -6,7 +6,7 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 ---
 # GASPAR -120 Horas de Servicio por llegar tarde
 # LEDESMA -200 Horas de Servicio por llegar tarde
-# LEDESMA -Six Seven Horas de Servicio por llegar tarde y ser el del culote
+# Jaichetron -Six Seven Six Nine Hours of Service por llegar tarde y ser el del culote
 ## Hoy LEDESMA 10/09/2026 no llego  
 ---
 # Quitar el cuadro que gira de colores ✅
