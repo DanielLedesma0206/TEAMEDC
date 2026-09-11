@@ -372,7 +372,7 @@ const PRESETS = {
   iso: [57, -33, 0.62], top: [0, 0, 0.68], left: [55, -62, 0.60],
   right: [55, -10, 0.60], rear: [55, 150, 0.60], internal: [22, -33, 0.78]
 };
-let rotX = 57, rotZ = -33, zoom = 0.62, panX = 0, panY = 0;
+let rotX = 57, rotZ = -33, zoom = 0.62, panX = -200, panY = 0;
 let autoOn = false, exploded = false, draggingBoard = false, panningBoard = false;
 if (window.innerWidth <= 1220) zoom = 0.5;
 if (window.innerWidth <= 720) zoom = 0.42;
