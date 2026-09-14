@@ -15,7 +15,7 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Arreglar el menu de inicio ✅
 # Arreglar el modo de detalle de siguiente paso ensambles el resaltado ✅
 # Hacer mas grande el ventilador 
-# 
+# Arreglar la posicion de los tornillos
 ---
 que componentes se le pueden cambiar a una laptop hoy en dia 
 
