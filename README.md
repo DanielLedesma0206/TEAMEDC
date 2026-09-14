@@ -12,9 +12,10 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Quitar el cuadro que gira de colores ✅
 # Arreglar ventilador abajo de procesador
 # Arreglar el modo de vista de ensamblaje ✅
-# Arreglar el menu de inicio
-# Arreglar el modo de detalle de siguiente paso ensambles el resaltado
-# Hacer mas grande el ventilador
+# Arreglar el menu de inicio ✅
+# Arreglar el modo de detalle de siguiente paso ensambles el resaltado ✅
+# Hacer mas grande el ventilador 
+# 
 ---
 que componentes se le pueden cambiar a una laptop hoy en dia 
 
