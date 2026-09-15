@@ -630,7 +630,7 @@ h1 {
 .hdd-visual::after { content: ""; position: absolute; right: 9px; bottom: 9px; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #cfd8e6, #3a4658); box-shadow: inset 0 0 6px rgba(0,0,0,0.4); }
 
 .fan-visual { position: relative; width: 66px; height: 66px; border-radius: 12px; background: linear-gradient(135deg, #2a3346, #11161f); border: 2px solid #4a566b; box-shadow: 0 9px 0 rgba(0,0,0,0.33); display: grid; place-items: center; }
-.fan-visual::before { content: ""; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, #05070b 0 16%, #2a3446 17% 24%, transparent 25%), conic-gradient(from 10deg, #c3ccd8 0deg 30deg, #1a2432 31deg 60deg, #8d9aad 61deg 90deg, #121a26 91deg 130deg, #c8d1de 131deg 170deg, #1c2635 171deg 210deg, #9aa6b6 211deg 250deg, #141c29 251deg 300deg, #cdd8e6 301deg 360deg); animation: fanSpin 3s linear infinite; }
+.fan-visual::before { content: ""; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, #05070b 0 16%, #2a3446 17% 24%, transparent 25%), conic-gradient(from 10deg, #c3ccd8 0deg 30deg, #1a2432 31deg 60deg, #8d9aad 61deg 90deg, #121a26 91deg 130deg, #c8d1de 131deg 170deg, #1c2635 171deg 210deg, #9aa6b6 211deg 250deg, #141c29 251deg 300deg, #cdd8e6 301deg 330deg); animation: fanSpin 3s linear infinite; }
 .fan-front-slot.occupied .installed-component::after, .fan-rear-slot.occupied .installed-component::after { content: ""; position: absolute; inset: 6px; border-radius: 14px; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.06), inset 0 0 32px rgba(0,0,0,0.5); z-index: 2; pointer-events: none; }
 
 .cable-eps-visual, .cable-atx-visual, .cable-pcie-visual, .cable-sata-data-visual, .cable-sata-power-visual, .fp-visual, .usbf-visual, .audiof-visual { position: relative; border-radius: 6px; box-shadow: 0 7px 0 rgba(0,0,0,0.32); }
@@ -709,7 +709,7 @@ h1 {
 .installed-component .psu-visual { width: 250px; height: 92px; }
 .installed-component .mobo-visual { display: none; }
 .installed-component .hdd-visual { width: 104px; height: 100px; }
-.installed-component .fan-visual { width: 84px; height: 230px; border-radius: 16px; }
+.installed-component .fan-visual { width: 84px; height: 430px; border-radius: 16px; }
 .installed-component .fan-rear-fan .fan-visual, .fan-rear-slot .installed-component .fan-visual { width: 70px; height: 80px; }
 .installed-component .paste-visual { width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #cfd8e6, #9aa6b6); }
 .installed-component .paste-visual::before, .installed-component .paste-visual::after { display: none; }
