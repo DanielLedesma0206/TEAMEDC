@@ -15,7 +15,7 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Arreglar el modo de vista de ensamblaje ✅
 # Arreglar el menu de inicio ✅
 # Arreglar el modo de detalle de siguiente paso ensambles el resaltado ✅
-# Hacer mas grande el ventilador 
+# Hacer mas grande el ventilador ✅
 # Arreglar la posicion de los tornillos ✅
 # Arreglar el apartado de la introduccion
 # Poner los componentes salteados para aprendizaje
