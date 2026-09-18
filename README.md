@@ -19,7 +19,7 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Arreglar la posicion de los tornillos ✅
 # Arreglar el apartado de la introduccion
 # Poner los componentes salteados para aprendizaje
-# Quitar el apartado de guia de pasos del ensamblaje
+# Quitar el apartado de guia de pasos del ensamblaje ✅
 # Adaptar completamente el css a todo el proyecto terminado 
 # Quitar la ventana de informacion cada que se coloca un componente
 # Quitar la informacion de la pieza del ensamblaje
