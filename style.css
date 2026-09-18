@@ -416,9 +416,22 @@ h1 {
 .chip-1 { left: 105px; top: 430px; } .chip-2 { right: 55px; top: 270px; } .chip-3 { left: 510px; top: 480px; }
 
 .cmos-battery {
-  position: absolute; right: 60px; top: 370px; width: 40px; height: 40px; border-radius: 50%;
+  position: relative;
+  right: -620px; top: 370px; width: 40px; height: 40px; border-radius: 50%;
   background: radial-gradient(circle at 30% 24%, #fff, #c6d0dd 36%, #7b8796 70%, #424b58);
   border: 2px solid #1a2232; box-shadow: 0 6px 0 rgba(0,0,0,0.35);
+}
+
+.cmos-battery::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  width: 84%;
+  height: 2px;
+  background: rgba(0,0,0,0.4);
+  transform: translateY(-50%);
+  border-radius: 1px;
 }
 .usb-header-deco, .audio-chip {
   position: absolute; background: #111b2a; color: rgba(255,255,255,0.42); border: 1px solid rgba(255,255,255,0.12);
