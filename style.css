@@ -481,7 +481,7 @@ h1 {
 .fp-slot { left: 560px; bottom: 40px; width: 92px; height: 44px; }
 .usbf-slot { left: 300px; bottom: 35px; width: 84px; height: 36px; }
 .audiof-slot { left: 95px; bottom: 35px; width: 84px; height: 36px; }
-.cpu-fan-slot { left: 362px; top: 168px; width: 64px; height: 30px; }
+.cpu-fan-slot { left: 145px; top: 310px; width: 64px; height: 30px; rotate: 90deg; }
 .fp-pin { font-size: 8px; }
 .fp-pwr-sw { left: 534px; bottom: 78px; width: 56px; height: 32px; }
 .fp-rst-sw { left: 596px; bottom: 78px; width: 56px; height: 32px; }
