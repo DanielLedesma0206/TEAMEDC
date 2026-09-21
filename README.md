@@ -15,14 +15,14 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Arreglar el modo de vista de ensamblaje ✅
 # Arreglar el menu de inicio ✅
 # Arreglar el modo de detalle de siguiente paso ensambles el resaltado ✅
-# Hacer mas grande el ventilador 
+# Hacer mas grande el ventilador ✅
 # Arreglar la posicion de los tornillos ✅
-# Arreglar el apartado de la introduccion
-# Poner los componentes salteados para aprendizaje
-# Quitar el apartado de guia de pasos del ensamblaje
+# Arreglar el apartado de la introduccion ✅
+# Poner los componentes salteados para aprendizaje ✅
+# Quitar el apartado de guia de pasos del ensamblaje ✅
 # Adaptar completamente el css a todo el proyecto terminado 
-# Quitar la ventana de informacion cada que se coloca un componente
-# Quitar la informacion de la pieza del ensamblaje
+# Quitar la ventana de informacion cada que se coloca un componente ✅
+
 ---
 que componentes se le pueden cambiar a una laptop hoy en dia 
 
