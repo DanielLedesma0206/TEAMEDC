@@ -416,22 +416,9 @@ h1 {
 .chip-1 { left: 105px; top: 430px; } .chip-2 { right: 55px; top: 270px; } .chip-3 { left: 510px; top: 480px; }
 
 .cmos-battery {
-  position: relative;
-  right: -620px; top: 370px; width: 40px; height: 40px; border-radius: 50%;
+  position: absolute; right: 30px; top: 300px; width: 40px; height: 40px; border-radius: 50%;
   background: radial-gradient(circle at 30% 24%, #fff, #c6d0dd 36%, #7b8796 70%, #424b58);
   border: 2px solid #1a2232; box-shadow: 0 6px 0 rgba(0,0,0,0.35);
-}
-
-.cmos-battery::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 8%;
-  width: 84%;
-  height: 2px;
-  background: rgba(0,0,0,0.4);
-  transform: translateY(-50%);
-  border-radius: 1px;
 }
 .usb-header-deco, .audio-chip {
   position: absolute; background: #111b2a; color: rgba(255,255,255,0.42); border: 1px solid rgba(255,255,255,0.12);
@@ -456,10 +443,15 @@ h1 {
 .cpu-slot.installing::after { animation: zifLever 0.85s ease; }
 
 .paste-slot { left: 250px; top: 245px; width: 64px; height: 64px; border-radius: 50%; z-index: 7; }
-.cooler-slot { left: 195px; top: 187px; width: 175px; height: 175px; border-radius: 50%; z-index: 10; opacity: 0.22; background: rgba(255,255,255,0.012); }
+.cooler-slot { left: 195px; top: 187px; width: 175px; height: 175px; border-radius: 50%; z-index: 4; opacity: 0.22; background: rgba(255,255,255,0.012); }
 .cooler-slot span { opacity: 0; }
 .pc-case.cpu-ready .cooler-slot { z-index: 9; opacity: 0.95; }
 .pc-case.cpu-ready .cooler-slot span { opacity: 0.78; }
+/* Una vez instalado el cooler, restaurar opacidad completa: un opacity < 1
+   sobre un elemento con preserve-3d APLANA su contexto 3D y anula el
+   translateZ(46px), haciendo que el ventilador quede por DEBAJO del CPU.
+   Con opacity:1 el 3D se conserva y el cooler queda por encima del CPU/pasta. */
+.pc-case.cpu-ready .cooler-slot.occupied { opacity: 1; }
 
 .ram-slot { width: 46px; height: 250px; top: 142px; border-radius: 11px; z-index: 6; }
 .ram-slot::before { content: ""; position: absolute; inset: 5px; background: linear-gradient(180deg, #111722, #05070c); border-radius: 7px; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.06); }
@@ -481,7 +473,7 @@ h1 {
 .fp-slot { left: 560px; bottom: 40px; width: 92px; height: 44px; }
 .usbf-slot { left: 300px; bottom: 35px; width: 84px; height: 36px; }
 .audiof-slot { left: 95px; bottom: 35px; width: 84px; height: 36px; }
-.cpu-fan-slot { left: 145px; top: 310px; width: 64px; height: 30px; rotate: 90deg; }
+.cpu-fan-slot { left: 362px; top: 168px; width: 64px; height: 30px; }
 .fp-pin { font-size: 8px; }
 .fp-pwr-sw { left: 534px; bottom: 78px; width: 56px; height: 32px; }
 .fp-rst-sw { left: 596px; bottom: 78px; width: 56px; height: 32px; }
@@ -496,7 +488,7 @@ h1 {
 .psu-bay { left: 175px; bottom: 35px; width: 280px; height: 95px; }
 .hdd-bay { left: 30px; bottom: 40px; width: 110px; height: 110px; }
 .sata-bay { right: 28px; bottom: 110px; width: 110px; height: 62px; }
-.fan-front-slot { left: 28px; top: 40px; width: 92px; height: 470px; }
+.fan-front-slot { left: 28px; top: 130px; width: 92px; height: 250px; }
 .fan-rear-slot { right: 20px; top: 70px; width: 74px; height: 84px; }
 .pcie-power-slot { left: 905px; top: 520px; width: 80px; height: 42px; }
 .sata-power-slot { right: 25px; bottom: 60px; width: 100px; height: 38px; }
@@ -593,8 +585,8 @@ h1 {
 }
 .cooler-visual::before { content: ""; position: absolute; inset: -12px; border-radius: 50%; border: 5px solid #293445; box-shadow: inset 0 0 0 5px rgba(255,255,255,0.06), 0 8px 0 rgba(0,0,0,0.25); }
 .cooler-visual::after { content: ""; position: absolute; inset: 13px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.25); }
-.cooler-slot.occupied .installed-component::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.07), inset 0 0 26px rgba(0,0,0,0.5); z-index: 9; pointer-events: none; }
-.cooler-slot.occupied .installed-component::before { content: ""; position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #d6deea, #3a4658 75%); box-shadow: inset 0 0 9px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.4); z-index: 9; pointer-events: none; }
+.cooler-slot.occupied .installed-component::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.07), inset 0 0 26px rgba(0,0,0,0.5); z-index: 2; pointer-events: none; }
+.cooler-slot.occupied .installed-component::before { content: ""; position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #d6deea, #3a4658 75%); box-shadow: inset 0 0 9px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.4); z-index: 3; pointer-events: none; }
 
 .gpu-visual { position: relative; width: 88px; height: 44px; background: linear-gradient(135deg, #314c7f, #0a101d 70%); border-radius: 9px; border-left: 12px solid #9ba6b5; border-bottom: 5px solid #d1a13c; box-shadow: 0 8px 0 rgba(0,0,0,0.38), inset 0 0 20px rgba(255,255,255,0.05); }
 .gpu-visual::before { content: ""; position: absolute; left: 23px; top: 9px; width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle, #05070a 0 25%, transparent 27%), conic-gradient(#b2bdcc, #202a39, #8d9aad, #151c28, #b2bdcc); border: 3px solid #435166; box-shadow: 31px 0 0 #253044, 31px 0 0 3px #435166; }
@@ -606,7 +598,7 @@ h1 {
 .m2-visual { position: relative; width: 88px; height: 23px; background: linear-gradient(180deg, #1f7f5b, #0a2b21); border-radius: 4px; border-right: 9px solid #d5ac43; box-shadow: 0 7px 0 rgba(0,0,0,0.32); }
 .m2-visual::before { content: ""; position: absolute; left: 10px; top: 5px; width: 17px; height: 12px; background: #0a1018; border-radius: 2px; box-shadow: 22px 0 #0a1018, 44px 0 #0a1018, 0 2px 0 rgba(255,255,255,0.08), 22px 2px 0 rgba(255,255,255,0.08), 44px 2px 0 rgba(255,255,255,0.08); }
 .m2-slot.occupied .installed-component::after {
-  content: ""; position: absolute; right: 180px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%;
+  content: ""; position: absolute; right: -3px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%;
   background: linear-gradient(90deg, transparent 40%, rgba(0, 0, 0, 0.55) 40% 60%, transparent 60%), radial-gradient(circle at 35% 30%, #eef4ff, #7b8799 55%, #252e3a);
   border: 1px solid rgba(0, 0, 0, 0.5); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5), 0 2px 0 rgba(0, 0, 0, 0.3); z-index: 8; pointer-events: none;
 }
@@ -643,7 +635,7 @@ h1 {
 .hdd-visual::after { content: ""; position: absolute; right: 9px; bottom: 9px; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #cfd8e6, #3a4658); box-shadow: inset 0 0 6px rgba(0,0,0,0.4); }
 
 .fan-visual { position: relative; width: 66px; height: 66px; border-radius: 12px; background: linear-gradient(135deg, #2a3346, #11161f); border: 2px solid #4a566b; box-shadow: 0 9px 0 rgba(0,0,0,0.33); display: grid; place-items: center; }
-.fan-visual::before { content: ""; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, #05070b 0 16%, #2a3446 17% 24%, transparent 25%), conic-gradient(from 10deg, #c3ccd8 0deg 30deg, #1a2432 31deg 60deg, #8d9aad 61deg 90deg, #121a26 91deg 130deg, #c8d1de 131deg 170deg, #1c2635 171deg 210deg, #9aa6b6 211deg 250deg, #141c29 251deg 300deg, #cdd8e6 301deg 330deg); animation: fanSpin 3s linear infinite; }
+.fan-visual::before { content: ""; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, #05070b 0 16%, #2a3446 17% 24%, transparent 25%), conic-gradient(from 10deg, #c3ccd8 0deg 30deg, #1a2432 31deg 60deg, #8d9aad 61deg 90deg, #121a26 91deg 130deg, #c8d1de 131deg 170deg, #1c2635 171deg 210deg, #9aa6b6 211deg 250deg, #141c29 251deg 300deg, #cdd8e6 301deg 360deg); animation: fanSpin 3s linear infinite; }
 .fan-front-slot.occupied .installed-component::after, .fan-rear-slot.occupied .installed-component::after { content: ""; position: absolute; inset: 6px; border-radius: 14px; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.06), inset 0 0 32px rgba(0,0,0,0.5); z-index: 2; pointer-events: none; }
 
 .cable-eps-visual, .cable-atx-visual, .cable-pcie-visual, .cable-sata-data-visual, .cable-sata-power-visual, .fp-visual, .usbf-visual, .audiof-visual { position: relative; border-radius: 6px; box-shadow: 0 7px 0 rgba(0,0,0,0.32); }
@@ -722,7 +714,7 @@ h1 {
 .installed-component .psu-visual { width: 250px; height: 92px; }
 .installed-component .mobo-visual { display: none; }
 .installed-component .hdd-visual { width: 104px; height: 100px; }
-.installed-component .fan-visual { width: 84px; height: 430px; border-radius: 16px; }
+.installed-component .fan-visual { width: 84px; height: 230px; border-radius: 16px; }
 .installed-component .fan-rear-fan .fan-visual, .fan-rear-slot .installed-component .fan-visual { width: 70px; height: 80px; }
 .installed-component .paste-visual { width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #cfd8e6, #9aa6b6); }
 .installed-component .paste-visual::before, .installed-component .paste-visual::after { display: none; }
@@ -1109,7 +1101,8 @@ h1 {
 .quiz-result { text-align: center; padding: 26px 18px; }
 .quiz-result .score { font-size: 40px; font-weight: 800; color: var(--accent); }
 
-/* ---- Laboratorio de diagnóstico ---- */
+/* ---- Laboratorio de diagnóstico (versión anterior; ya NO la usa el JS,
+   se conserva por compatibilidad pero puede borrarse) ---- */
 .case-card.solved { border-color: rgba(82,255,184,0.5); }
 .case-symptom { color: #eaf0ff; font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
 .case-tag { display: inline-block; margin-right: 8px; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #04101f; background: #ffe66b; }
@@ -1243,3 +1236,127 @@ body.pb-home-active #homeRoot {
   .pb-cards { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) { .pb-cards { grid-template-columns: 1fr; } }
+
+/* =================================================================
+   ============   AÑADIDOS · MÓDULO DE DIAGNÓSTICO (POST)   ========
+   Estilos NUEVOS para el laboratorio de diagnóstico tal como lo
+   genera el JS actual (.diag-lab, .post-top, .post-body,
+   .post-result, .diag-opt...) y el recuadro ".clave" suelto.
+   Mismo estilo plano que el resto de módulos.
+   ================================================================= */
+
+/* Recuadro "idea clave" reutilizable (teoría, memoria, diagnóstico).
+   Acepta color propio por --accent en línea; si no, usa el global.
+   Dentro de .topic2 manda la regla anterior por ser más específica. */
+.clave {
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #eaf0ff;
+  background: rgba(126, 215, 255, 0.07);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+}
+
+/* Distribución: pantalla del equipo (izquierda) + preguntas (derecha) */
+.diag-lab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1080px) {
+  .diag-lab { grid-template-columns: 1fr; }
+}
+
+/* Pantalla del equipo. El JS le pone también la clase .panel; aquí
+   quitamos su relleno para que el encabezado y la consola ocupen todo
+   el ancho. Esta regla va después de la .post-screen anterior, así que
+   manda esta. */
+.diag-lab .post-screen { padding: 0; overflow: hidden; margin-bottom: 0; }
+
+.post-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(126, 215, 255, 0.06);
+}
+.post-name {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.post-top .primary-btn { margin: 0; }
+
+.post-body {
+  padding: 14px 16px;
+  min-height: 150px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #cdd7f5;
+}
+.post-body::-webkit-scrollbar { width: 8px; }
+.post-body::-webkit-scrollbar-thumb { background: rgba(126, 215, 255, 0.35); border-radius: 99px; }
+
+/* Resultado del POST (síntoma detectado) */
+.post-result {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 12px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.post-result.ok  { border-color: rgba(82, 255, 184, 0.5); background: rgba(82, 255, 184, 0.08); }
+.post-result.bad { border-color: rgba(255, 98, 98, 0.5);  background: rgba(255, 98, 98, 0.08); }
+.post-result strong { display: block; margin-bottom: 6px; color: #fff; font-size: 14px; }
+
+/* Lucecita de estado (verde = ok, roja = falla) */
+.post-blink {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 10px var(--accent-2);
+  animation: postBlink 1s ease-in-out infinite;
+}
+.post-blink.red { background: #ff6262; box-shadow: 0 0 10px #ff6262; }
+@keyframes postBlink { 50% { opacity: 0.25; } }
+
+/* Lista de síntomas (pantalla / pitidos / LED) */
+.post-signals { margin: 4px 0 0; padding: 0; list-style: none; }
+.post-signals li { color: #cdd7f5; font-size: 13px; line-height: 1.7; }
+
+/* Opciones de causa y de arreglo */
+.diag-opts { display: grid; gap: 8px; }
+.diag-opt {
+  text-align: left;
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #eaf0ff;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+}
+.diag-opt:hover { border-color: var(--accent); }
+.diag-opt.correct { border-color: var(--accent-2); background: rgba(82, 255, 184, 0.1); color: #baffe4; }
+.diag-opt.wrong   { border-color: #ff6262;         background: rgba(255, 98, 98, 0.1);  color: #ff9b9b; }
+.diag-opt:disabled { pointer-events: none; opacity: 0.85; }
+
+/* Espacio del botón "Continuar" tras responder */
+#diagFb .view-btn { margin-top: 12px; }
