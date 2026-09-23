@@ -5,10 +5,11 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Muerte a los romitenses
 ---
 # GASPAR +120 Horas de Servicio por llegar tarde
-# LEDESMA +130 Horas de Servicio por llegar tarde
+# LEDESMA -130 Horas de Servicio por llegar tarde
 # Jaichetron -Six Seven Six Nine Hours of Service por llegar tarde y ser el del culote
 # Hoy LEDESMA 10/09/2026 no llego  
-# Jaichete llego bien tarde 14/09/2026
+# Jaichete llego bien tarde 14/09/2026 y 23/09/2026
+# Ledeschempai llego 8:30 23/09/2026
 ---
 # Quitar el cuadro que gira de colores ✅
 # Arreglar ventilador abajo de procesador
