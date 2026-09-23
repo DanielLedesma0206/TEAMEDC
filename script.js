@@ -1937,35 +1937,13 @@ initBuild();
      MÓDULO 6 · GLOSARIO (buscable)
      ================================================================= */
   const GLOSSARY = [
-    ["ALU", "Unidad Aritmético-Lógica: realiza operaciones aritméticas y lógicas dentro del CPU."],
-    ["BIOS/UEFI", "Firmware de la placa que inicializa el hardware y arranca el sistema operativo."],
-    ["Bus", "Canal que comunica componentes; se divide en bus de datos, de direcciones y de control."],
-    ["Caché", "Memoria muy rápida (L1/L2/L3) que guarda datos frecuentes cerca del CPU."],
-    ["Chipset", "Conjunto de circuitos de la placa que gestiona la comunicación entre CPU, RAM, PCIe, etc."],
-    ["Dual channel", "Uso de dos módulos de RAM en paralelo (A2/B2) para más ancho de banda."],
-    ["DDR", "Tipo de memoria RAM (DDR3/DDR4/DDR5); cada generación es más rápida y no intercambiable."],
-    ["Factor de forma", "Tamaño y formato de la placa/gabinete (ATX, microATX, Mini-ITX)."],
-    ["Frecuencia", "Velocidad de reloj del CPU/RAM medida en GHz/MHz."],
-    ["GPU", "Unidad de procesamiento gráfico, integrada (iGPU) o dedicada (con VRAM propia)."],
-    ["iGPU", "Gráficos integrados dentro del CPU; dan video sin necesidad de GPU dedicada."],
-    ["M.2 / NVMe", "Ranura y protocolo para SSD de alta velocidad que usan el bus PCIe."],
-    ["PCIe", "Bus de expansión de alta velocidad; la GPU usa la ranura PCIe x16."],
-    ["POST", "Power-On Self-Test: autodiagnóstico del hardware al encender."],
-    ["RAM", "Memoria volátil de trabajo; guarda datos en uso y se borra al apagar."],
-    ["Registros", "Memoria ultrarrápida interna del CPU para datos e instrucciones inmediatas."],
-    ["Socket", "Zócalo donde se instala el CPU; debe coincidir CPU y placa (AM4, AM5, LGA1700)."],
-    ["Standoffs", "Separadores que elevan la placa sobre la bandeja para que no haga cortocircuito."],
-    ["TDP", "Thermal Design Power: calor/potencia que el enfriamiento debe disipar del CPU."],
-    ["Throttling", "Reducción automática de frecuencia por temperatura alta para proteger el chip."],
-    ["VRAM", "Memoria dedicada de la GPU para texturas y datos gráficos."],
-    ["VRM", "Circuito de la placa que regula y estabiliza el voltaje que llega al CPU."],
-    ["80+", "Certificación de eficiencia de la fuente (Bronze, Gold, Platinum…)."]
+    
   ];
 
   function renderGlossary() {
     const host = document.getElementById("modGloss");
     host.innerHTML =
-      `<h2 class="mod-head">6 · Glosario</h2>
+      `<h2 class="mod-head">Biblioteca</h2>
        <p class="mod-sub">Términos clave de arquitectura y ensamble. Usa el buscador para encontrar un concepto.</p>
        <input id="glossSearch" class="gloss-search" type="text" placeholder="Buscar término… (ej. TDP, PCIe, dual channel)">
        <div class="gloss-list" id="glossList"></div>`;
