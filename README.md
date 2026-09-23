@@ -5,10 +5,11 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Muerte a los romitenses
 ---
 # GASPAR +120 Horas de Servicio por llegar tarde
-# LEDESMA +130 Horas de Servicio por llegar tarde
+# LEDESMA -130 Horas de Servicio por llegar tarde
 # Jaichetron -Six Seven Six Nine Hours of Service por llegar tarde y ser el del culote
 # Hoy LEDESMA 10/09/2026 no llego  
-# Jaichete llego bien tarde 14/09/2026
+# Jaichete llego bien tarde 14/09/2026 
+# 23/09/2026 Jaichetes y Ledesdetonadito no llegaron -40 hours of service
 ---
 # Quitar el cuadro que gira de colores ✅
 # Arreglar ventilador abajo de procesador
@@ -22,6 +23,9 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Quitar el apartado de guia de pasos del ensamblaje ✅
 # Adaptar completamente el css a todo el proyecto terminado 
 # Quitar la ventana de informacion cada que se coloca un componente ✅
+# Agregar la introduccion teorica y tecnica 
+
+
 
 ---
 que componentes se le pueden cambiar a una laptop hoy en dia 

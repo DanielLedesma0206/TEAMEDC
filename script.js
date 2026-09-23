@@ -259,6 +259,13 @@ const components = [
 /* ---------- Estado del ensamble ---------- */
 let selectedId = null;
 let placed = new Set();
+/* Orden MEZCLADO de las piezas, para que el alumno piense cuál va
+   y no siga la lista en orden. Se mezcla una vez al cargar. */
+let partsOrder = components.slice();
+for (let i = partsOrder.length - 1; i > 0; i--) {
+  const j = (Math.random() * (i + 1)) | 0;
+  [partsOrder[i], partsOrder[j]] = [partsOrder[j], partsOrder[i]];
+}
 
 /* ---------- Referencias del DOM ---------- */
 const partsList     = document.getElementById("partsList");
@@ -420,7 +427,7 @@ function renderParts() {
   partsList.innerHTML = "";
   const currentId = getCurrentComponentId();
 
-  components.forEach(component => {
+  partsOrder.forEach(component => {
     const done = placed.has(component.id);
     const skipped = !done && component.group && groupSatisfied(component.group);
     const available = depsMet(component);
@@ -432,7 +439,7 @@ function renderParts() {
     if (done) card.classList.add("is-done");
     else if (skipped) card.classList.add("skipped");
     else if (!available) card.classList.add("locked");
-    if (!done && !skipped && component.id === currentId) card.classList.add("current-part");
+    //if (!done && !skipped && component.id === currentId) card.classList.add("current-part");
 
     const stepN = document.createElement("span");
     stepN.className = "step-n";
@@ -688,12 +695,6 @@ function installComponent(component, slot) {
   selectComponent(component.id);
   playInstallSound(component);
 
-  // La ficha aparece cuando termina la animación
-  let fichaDelay = 720;
-  if (component.type === "screws") fichaDelay = 950;
-  if (component.id === "cpu") fichaDelay = 1050;
-  if (component.id === "m2") fichaDelay = 1300;
-  setTimeout(() => { if (placed.has(component.id)) showSpecModal(component); }, fichaDelay);
 
   showToast(component.type === "screws" ? `🔩 ${component.name} listo.` : `✅ ${component.name} instalado correctamente.`);
 
@@ -715,6 +716,7 @@ function finishBuild() {
    GUÍA · INFO · UI
    ================================================================= */
 function renderGuide() {
+    if (!stepGuide) { refrescarContexto(); return; }
   const currentId = getCurrentComponentId();
   stepGuide.innerHTML = "";
   components.forEach(c => {
@@ -755,7 +757,7 @@ function selectComponent(componentId) {
   const specsHtml = SPECS[c.id]
     ? `<div class="spec-sheet"><h4>Ficha técnica</h4>${tablaSpecs(SPECS[c.id])}</div>` : "";
 
-  infoBox.innerHTML = `
+  if (infoBox) infoBox.innerHTML = `
     <h3>${c.name}</h3>
     <p>${c.info}</p>
     ${specsHtml}
@@ -766,7 +768,7 @@ function selectComponent(componentId) {
 }
 
 function showDefaultInfo() {
-  infoBox.innerHTML = `
+  if (infoBox) infoBox.innerHTML = `
     <p>Selecciona o arrastra un componente para ver su descripción y dónde se instala.</p>
     <p>Sigue el orden de la guía. En el paso 6 eliges refrigeración por <strong>aire</strong> o <strong>líquida</strong>.</p>
     <p>🔍 <strong>Tip:</strong> haz clic en una pieza ya instalada dentro del gabinete para ver su <strong>ficha técnica</strong>.</p>`;
@@ -1362,15 +1364,92 @@ initBuild();
   ];
 
   let teoTab = "arq";
+
+  /* Inyecta una sola vez los estilos de este apartado (diagrama simple con
+     animación suave). Se hace desde el JS para que se vea bien sin importar
+     en qué archivo CSS estén el resto de los estilos. */
+  function injectTeoStyles() {
+    if (document.getElementById("teoStyles")) return;
+    const css = `
+    .t3-wrap{display:grid;gap:18px;max-width:920px;margin:0 auto}
+    .t3-card{background:var(--bg-panel,#161821);border:1px solid var(--border,#2a2e3d);border-radius:16px;padding:20px 22px}
+    .t3-h{margin:0 0 4px;font-size:20px;color:#fff}
+    .t3-subh{margin:0 0 4px;font-size:17px;color:#fff}
+    .t3-desc{margin:0 0 14px;color:var(--text-dim,#9aa3bd);font-size:14px;line-height:1.55}
+    .t3-desc strong{color:#cdd7f5;font-weight:600}
+
+    /* Diagrama SVG de von Neumann */
+    .t3-svg{display:block;width:100%;max-width:600px;height:auto;margin:6px auto 2px}
+    .t3-wire{stroke:#4a90b8;stroke-width:3;stroke-linecap:round;stroke-dasharray:5 9;animation:t3flow 1.1s linear infinite}
+    @keyframes t3flow{to{stroke-dashoffset:-14}}
+    .t3-svg .t3-bus-rect{fill:rgba(126,215,255,.12);stroke:#7ed7ff;stroke-width:1.5}
+    .t3-node{cursor:pointer}
+    .t3-node rect{fill:#191c27;stroke:var(--border,#2a2e3d);stroke-width:1.5;transition:stroke .2s,fill .2s}
+    .t3-node:hover rect{stroke:#7ed7ff}
+    .t3-node.sel rect{stroke:var(--nc,#7ed7ff);stroke-width:2.5}
+    .t3-ico{font-size:26px}
+    .t3-name{fill:#eaf0ff;font-size:14px;font-weight:700}
+    .t3-label{fill:#04121e;font-size:12px;font-weight:800;letter-spacing:1px}
+    .t3-cpu-glow{fill:#ffb86b;opacity:0;animation:t3pulse 2.6s ease-in-out infinite}
+    @keyframes t3pulse{0%,100%{opacity:0}50%{opacity:.16}}
+
+    /* Recuadro de detalle */
+    .t3-detail{margin-top:8px;border:1px solid var(--border,#2a2e3d);border-left:3px solid #7ed7ff;border-radius:12px;
+      background:rgba(126,215,255,.06);padding:13px 15px;min-height:66px}
+    .t3-dtitle{display:flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:15px}
+    .t3-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+    .t3-detail p{margin:6px 0 0;color:#cdd7f5;font-size:14px;line-height:1.55}
+
+    /* Ciclo de instrucción */
+    .t3-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    .t3-step{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-radius:12px;background:#191c27;
+      border:1px solid var(--border,#2a2e3d);animation:t3in .5s ease both}
+    .t3-step-n{width:28px;height:28px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+      font-weight:800;font-size:13px;color:#04121e;background:#7ed7ff}
+    .t3-step h4{margin:0 0 3px;font-size:13.5px;color:#fff}
+    .t3-step p{margin:0;color:#c7d2f5;font-size:12.5px;line-height:1.4}
+    @keyframes t3in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+    /* Jerarquía de memoria */
+    .t3-mem{display:grid;gap:10px}
+    .t3-lvl{border:1px solid var(--border,#2a2e3d);border-left:4px solid var(--c);border-radius:12px;background:#191c27;
+      padding:13px 15px;animation:t3in .5s ease both}
+    .t3-lvl-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+    .t3-lvl-top strong{color:#fff;font-size:14.5px}
+    .t3-lvl-v{color:var(--c);font-weight:700;font-size:13px;white-space:nowrap}
+    .t3-lvl p{margin:5px 0 4px;color:#c7d2f5;font-size:13px;line-height:1.45}
+    .t3-lvl-cap{color:var(--text-dim,#9aa3bd);font-size:12px}
+
+    /* Componentes */
+    .t3-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+    .t3-comp{padding:16px;border-radius:14px;background:#191c27;border:1px solid var(--border,#2a2e3d);
+      border-top:3px solid var(--c);animation:t3in .5s ease both}
+    .t3-comp-ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;margin-bottom:10px;
+      background:color-mix(in srgb,var(--c) 16%,transparent)}
+    .t3-comp h4{margin:0 0 2px;font-size:15px;color:#fff}
+    .t3-comp-tag{display:block;margin-bottom:8px;font-size:12px;color:var(--c)}
+    .t3-comp p{margin:0;color:#c7d2f5;font-size:13px;line-height:1.5}
+
+    @media(prefers-reduced-motion:reduce){
+      .t3-wire,.t3-cpu-glow,.t3-step,.t3-lvl,.t3-comp{animation:none}
+    }
+    `;
+    const st = document.createElement("style");
+    st.id = "teoStyles";
+    st.textContent = css;
+    document.head.appendChild(st);
+  }
+
   function renderTheory() {
+    injectTeoStyles();
     const host = document.getElementById("modTeoria");
     host.innerHTML =
       `<h2 class="mod-head">1 · Introducción teórica</h2>
-       <p class="mod-sub">Arquitectura de la computadora, jerarquía de memoria y cada componente. Elige un apartado.</p>
+       <p class="mod-sub">Una introducción visual a cómo funciona una computadora. Elige un apartado.</p>
        <div class="subtabs">
-         <button class="subtab is-active" data-t="arq">Arquitectura</button>
-         <button class="subtab" data-t="mem">Jerarquía de memoria</button>
-         <button class="subtab" data-t="comp">Componentes</button>
+         <button class="subtab is-active" data-t="arq">🧠 Arquitectura</button>
+         <button class="subtab" data-t="mem">🗂️ Jerarquía de memoria</button>
+         <button class="subtab" data-t="comp">🧩 Componentes</button>
        </div>
        <div id="teoContent"></div>`;
     host.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { teoTab = b.dataset.t; paintTeo(); }));
@@ -1384,105 +1463,92 @@ initBuild();
     else renderComp(c);
   }
 
+  /* Recuadro de detalle: título con punto de color + descripción. */
+  function setDetail(el, title, desc, color) {
+    el.innerHTML = `<span class="t3-dtitle"><span class="t3-dot" style="background:${color}"></span>${title}</span><p>${desc}</p>`;
+  }
+
+  /* ---------- Arquitectura: diagrama SVG animado + ciclo ---------- */
   function renderArq(c) {
     c.innerHTML =
-      `<div class="panel"><h2>Modelo de von Neumann</h2>
-        <p class="small-text">La computadora se organiza en unidades que se comunican por buses. Toca cada bloque para ver su función.</p>
-        <div class="vn-diagram">
-          <div class="vn-box" data-i="0">⌨️<span>Entrada</span></div>
-          <div class="vn-box vn-cpu" data-i="1">⚙️<span>CPU · UC + ALU + Registros</span></div>
-          <div class="vn-box" data-i="2">🖥️<span>Salida</span></div>
-          <div class="vn-bus" data-i="4">BUS DEL SISTEMA (datos · direcciones · control)</div>
-          <div class="vn-box vn-mem" data-i="3">🧬<span>Memoria principal (RAM)</span></div>
-        </div>
-        <div class="detail-panel" id="vnDetail">Toca un bloque del diagrama para leer su función.</div>
-        <h3 class="sub-h">Dentro del CPU</h3>
-        <div class="chip-row" id="cpuParts"></div>
-        <h3 class="sub-h">Los tres buses</h3>
-        <div class="chip-row" id="busParts"></div>
-      </div>
-      <div class="panel"><h2>Ciclo de instrucción</h2>
-        <p class="small-text">Cada instrucción pasa por estas etapas. Pulsa “Ejecutar” para verlas en secuencia.</p>
-        <div class="cycle" id="cycle"></div>
-        <button class="primary-btn" id="cycleRun" style="width:auto">▶ Ejecutar ciclo</button>
-        <div class="detail-panel" id="cycleDetail">El ciclo se repite millones de veces por segundo.</div>
-      </div>`;
-    const det = c.querySelector("#vnDetail");
-    c.querySelectorAll(".vn-box, .vn-bus").forEach(b => b.addEventListener("click", () => {
-      c.querySelectorAll(".vn-box, .vn-bus").forEach(x => x.classList.remove("sel"));
-      b.classList.add("sel");
-      const it = VN[+b.dataset.i]; det.innerHTML = `<strong>${it.t}</strong><br>${it.d}`;
+      `<div class="t3-wrap">
+         <div class="t3-card">
+           <h2 class="t3-h">¿Cómo funciona una computadora?</h2>
+           <p class="t3-desc">Sigue el modelo de <strong>von Neumann</strong>: los datos entran, el <strong>CPU</strong> los procesa con ayuda de la <strong>memoria</strong>, y salen los resultados. Fíjate cómo fluye la información por los cables, y toca un bloque para leer qué hace.</p>
+           <svg class="t3-svg" viewBox="0 0 640 372" role="img" aria-label="Diagrama de von Neumann">
+             <rect class="t3-cpu-glow" x="239" y="24" width="162" height="122" rx="16"></rect>
+             <line class="t3-wire" x1="170" y1="85" x2="245" y2="85"></line>
+             <line class="t3-wire" x1="395" y1="85" x2="470" y2="85"></line>
+             <line class="t3-wire" x1="320" y1="140" x2="320" y2="185"></line>
+             <line class="t3-wire" x1="320" y1="229" x2="320" y2="275"></line>
+             <g class="t3-node" data-k="bus"><rect class="t3-bus-rect" x="20" y="185" width="600" height="44" rx="12"></rect><text class="t3-label" x="320" y="212" text-anchor="middle">BUS DEL SISTEMA</text></g>
+             <g class="t3-node" data-k="in"><rect x="20" y="40" width="150" height="90" rx="12"></rect><text class="t3-ico" x="95" y="84" text-anchor="middle">⌨️</text><text class="t3-name" x="95" y="114" text-anchor="middle">Entrada</text></g>
+             <g class="t3-node" data-k="cpu"><rect x="245" y="30" width="150" height="110" rx="14"></rect><text class="t3-ico" x="320" y="82" text-anchor="middle">⚙️</text><text class="t3-name" x="320" y="114" text-anchor="middle">CPU</text></g>
+             <g class="t3-node" data-k="out"><rect x="470" y="40" width="150" height="90" rx="12"></rect><text class="t3-ico" x="545" y="84" text-anchor="middle">🖥️</text><text class="t3-name" x="545" y="114" text-anchor="middle">Salida</text></g>
+             <g class="t3-node" data-k="mem"><rect x="245" y="275" width="150" height="80" rx="12"></rect><text class="t3-ico" x="320" y="314" text-anchor="middle">🧬</text><text class="t3-name" x="320" y="342" text-anchor="middle">Memoria (RAM)</text></g>
+           </svg>
+           <div class="t3-detail" id="t3det"></div>
+         </div>
+
+         <div class="t3-card">
+           <h3 class="t3-subh">El ciclo de instrucción</h3>
+           <p class="t3-desc" style="margin-bottom:12px">El CPU repite estos cuatro pasos, muy rápido y en orden:</p>
+           <div class="t3-steps" id="t3steps"></div>
+         </div>
+       </div>`;
+
+    const det = c.querySelector("#t3det");
+    const map = { in: { i: 0, c: "#6bbdff" }, cpu: { i: 1, c: "#ffb86b" }, out: { i: 2, c: "#6bbdff" }, mem: { i: 3, c: "#8affd6" }, bus: { i: 4, c: "#7ed7ff" } };
+
+    setDetail(det, "El modelo de von Neumann", "Una sola memoria guarda los datos y las instrucciones; el CPU las lee y ejecuta una por una. Toca cualquier bloque del diagrama para ver su función.", "#7ed7ff");
+
+    c.querySelectorAll(".t3-node").forEach(n => n.addEventListener("click", () => {
+      const m = map[n.dataset.k];
+      c.querySelectorAll(".t3-node").forEach(x => x.classList.remove("sel"));
+      n.classList.add("sel"); n.style.setProperty("--nc", m.c);
+      setDetail(det, VN[m.i].t, VN[m.i].d, m.c);
     }));
-    const cpuP = c.querySelector("#cpuParts");
-    SUBCPU.forEach(p => { const s = document.createElement("button"); s.className = "chip-btn"; s.textContent = p.t;
-      s.addEventListener("click", () => det.innerHTML = `<strong>${p.t}</strong><br>${p.d}`); cpuP.appendChild(s); });
-    const busP = c.querySelector("#busParts");
-    BUSES.forEach(p => { const s = document.createElement("button"); s.className = "chip-btn"; s.textContent = p.t;
-      s.addEventListener("click", () => det.innerHTML = `<strong>${p.t}</strong><br>${p.d}`); busP.appendChild(s); });
-    const cyc = c.querySelector("#cycle");
-    CYCLE.forEach((st, i) => { const d = document.createElement("div"); d.className = "cycle-step"; d.dataset.i = i;
-      d.innerHTML = `<span>${st.t}</span>`; cyc.appendChild(d); });
-    const cdet = c.querySelector("#cycleDetail");
-    c.querySelector("#cycleRun").addEventListener("click", () => {
-      const steps = [...cyc.querySelectorAll(".cycle-step")];
-      steps.forEach(s => s.classList.remove("on"));
-      let i = 0;
-      (function go() {
-        if (i >= steps.length) return;
-        steps.forEach(s => s.classList.remove("on"));
-        steps[i].classList.add("on");
-        cdet.innerHTML = `<strong>${CYCLE[i].t}</strong><br>${CYCLE[i].d}`;
-        i++; setTimeout(go, 1100);
-      })();
+
+    const steps = c.querySelector("#t3steps");
+    CYCLE.forEach((s, i) => {
+      const d = document.createElement("div");
+      d.className = "t3-step"; d.style.animationDelay = (i * 90) + "ms";
+      d.innerHTML = `<span class="t3-step-n">${i + 1}</span><div><h4>${s.t.replace(/^\d+\s*·\s*/, "")}</h4><p>${s.d}</p></div>`;
+      steps.appendChild(d);
     });
   }
 
+  /* ---------- Jerarquía de memoria ---------- */
   function renderMem(c) {
+    const colors = ["#52ffb8", "#7ed7ff", "#6bbdff", "#b98cff", "#ff9b9b"];
+    const rows = MEM.map((m, i) =>
+      `<div class="t3-lvl" style="--c:${colors[i % colors.length]};animation-delay:${i * 70}ms">
+         <div class="t3-lvl-top"><strong>${m.t}</strong><span class="t3-lvl-v">${m.v}</span></div>
+         <p>${m.r}</p>
+         <span class="t3-lvl-cap">Capacidad típica: ${m.s}</span>
+       </div>`).join("");
     c.innerHTML =
-      `<div class="panel"><h2>Jerarquía de memoria</h2>
-        <p class="small-text">Cuanto más cerca del CPU, más <strong>rápida</strong>, más <strong>cara</strong> y de <strong>menor capacidad</strong>. Toca cada nivel.</p>
-        <div class="pyramid" id="pyr"></div>
-        <div class="detail-panel" id="memDetail">Toca un nivel para ver su velocidad, tamaño y función.</div>
-        <div class="clave" style="--accent:#7ed7ff;margin-top:14px">💡 Idea clave: la caché existe para que el CPU no tenga que esperar a la RAM, y la RAM para no depender del lento almacenamiento.</div>
-      </div>`;
-    const pyr = c.querySelector("#pyr"), det = c.querySelector("#memDetail");
-    MEM.forEach((m, i) => {
-      const row = document.createElement("div");
-      row.className = "pyr-row"; row.style.width = (54 + i * 11) + "%";
-      row.innerHTML = `<span>${m.t}</span><small>${m.v}</small>`;
-      row.addEventListener("click", () => {
-        pyr.querySelectorAll(".pyr-row").forEach(x => x.classList.remove("sel")); row.classList.add("sel");
-        det.innerHTML = `<strong>${m.t}</strong><br>Velocidad: ${m.v} · Capacidad: ${m.s}<br>${m.r}`;
-      });
-      pyr.appendChild(row);
-    });
+      `<div class="t3-wrap"><div class="t3-card">
+         <h2 class="t3-h">Jerarquía de memoria</h2>
+         <p class="t3-desc">No toda la memoria es igual. Cuanto más arriba en la lista, más <strong>rápida</strong> (y más cara y pequeña). De la más veloz a la más grande:</p>
+         <div class="t3-mem">${rows}</div>
+       </div></div>`;
   }
 
+  /* ---------- Componentes ---------- */
   function renderComp(c) {
-    c.innerHTML = `<div class="topic-grid" id="theoryGrid"></div>`;
-    const grid = c.querySelector("#theoryGrid");
-    THEORY.forEach((it, k) => {
-      const el = document.createElement("div");
-      el.className = "topic2"; el.style.setProperty("--accent", it.col); el.style.animationDelay = (k * 40) + "ms";
-      el.innerHTML =
-        `<div class="topic2-head"><div class="topic2-badge">${it.ico}</div>
-           <div><h3>${it.t}</h3><span class="topic2-tag">${it.tag}</span></div><span class="chev">▸</span></div>
-         <div class="topic2-body">
-           <p>${it.def}</p>
-           <div class="chips">${it.points.map(p => `<span class="chip">${p}</span>`).join("")}</div>
-           <div class="clave"><strong>💡 Clave:</strong> ${it.clave}</div>
-           <div class="mini-chk"><strong>Comprueba:</strong> ${it.chk.q}
-             <button class="chk-btn">Ver respuesta</button><span class="chk-a" hidden> ✔ ${it.chk.a}</span></div>
-         </div>`;
-      el.querySelector(".topic2-head").addEventListener("click", () => {
-        const open = el.classList.contains("open");
-        grid.querySelectorAll(".topic2").forEach(t => t.classList.remove("open"));
-        if (!open) el.classList.add("open");
-      });
-      const btn = el.querySelector(".chk-btn"), ans = el.querySelector(".chk-a");
-      btn.addEventListener("click", e => { e.stopPropagation(); ans.hidden = false; btn.style.display = "none"; });
-      grid.appendChild(el);
-    });
+    const cards = THEORY.map((it, i) =>
+      `<div class="t3-comp" style="--c:${it.col};animation-delay:${i * 50}ms">
+         <div class="t3-comp-ico">${it.ico}</div>
+         <h4>${it.t}</h4><span class="t3-comp-tag">${it.tag}</span>
+         <p>${it.def}</p>
+       </div>`).join("");
+    c.innerHTML =
+      `<div class="t3-wrap"><div class="t3-card">
+         <h2 class="t3-h">Los componentes</h2>
+         <p class="t3-desc">Estas son las piezas principales de una computadora y para qué sirve cada una.</p>
+         <div class="t3-grid">${cards}</div>
+       </div></div>`;
   }
 
   /* =================================================================
@@ -2171,7 +2237,7 @@ initBuild();
 
   function renderCase() {
     if (idx >= lote.length) return renderReport();
-    etapa = "causa";
+    casoCausaOk = false;
     const c = lote[idx];
     host.innerHTML =
       `<h2 class="mod-head">3 · Diagnóstico de errores</h2>
