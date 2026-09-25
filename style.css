@@ -472,11 +472,11 @@ h1 {
 .ram-slot-1 { left: 420px; } .ram-slot-2 { left: 482px; }
 
 .m2-slot { left: 385px; top: 425px; width: 195px; height: 42px; z-index: 6; }
-.gpu-slot { left: 155px; top: 500px; width: 360px; height: 58px; z-index: 6; }
+.gpu-slot { left: 155px; top: 500px; width: 360px; height: 58px; z-index: 2; }
 .gpu-slot::after {
   content: ""; position: absolute; right: -7px; top: 50%; width: 15px; height: 28px; margin-top: -14px;
   border-radius: 3px; background: linear-gradient(90deg, #3a4658, #1a222f); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  transform-origin: left center; z-index: 7; pointer-events: none;
+  transform-origin: left center; z-index: 2; pointer-events: none;
 }
 .gpu-slot.installing::after { animation: pcieLatch 0.65s ease; }
 
