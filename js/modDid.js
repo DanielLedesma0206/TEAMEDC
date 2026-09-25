@@ -747,7 +747,7 @@ function renderQuizResult() {
      MÓDULO 6 · GLOSARIO (buscable)
      ================================================================= */
   const GLOSSARY = [
-
+    
 ];
 
 function renderGlossary() {
