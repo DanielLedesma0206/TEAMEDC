@@ -26,7 +26,7 @@
         <h1>PC Builder</h1>
       </div>
 
-      <!-- Indicador de paso actual -->
+      <!-- Indicador de paso actual (NO es puntaje, sólo guía de avance) -->
       <div class="phase-badge">
         <span>Paso actual</span>
         <strong id="phaseText">1. Separadores (standoffs)</strong>
@@ -127,7 +127,7 @@
 
             <!-- ============ BANDEJA + PLACA MADRE ============ -->
             <div class="case-tray">
-              <!-- Marcas de los agujeros de standoff -->
+              <!-- Marcas de los agujeros de standoff (se rellenan al instalar) -->
               <div class="slot tray-slot standoff-slot" data-target="standoffs"><span>STANDOFFS</span></div>
 
               <!-- Slot donde se monta la placa madre -->
@@ -245,23 +245,10 @@
         <div id="learnPanel" class="learn-panel"></div>
         <h2>Guía de ensamblaje</h2>
         <div id="catIndex" class="cat-index"></div>
-        <div id="stepGuide" class="step-guide"></div>
 
         <button id="highlightBtn" class="primary-btn">Resaltar siguiente paso</button>
-
-        <h2 class="info-sub">Información de la pieza</h2>
-        <div id="componentInfo" class="component-info">
-          <p>Selecciona o arrastra un componente para ver su descripción y dónde se instala.</p>
-        </div>
-
-        <div class="tips-box">
-          <h3>Consejos reales</h3>
-          <p>Primero coloca los separadores (standoffs) y luego monta la placa.</p>
-          <p>El CPU va antes que la pasta térmica y el disipador.</p>
-          <p>La RAM activa dual channel en las ranuras A2/B2.</p>
-          <p>Organiza los cables por detrás de la bandeja antes de cerrar.</p>
-        </div>
       </aside>
+      
     </main>
     </div><!-- /modEnsamble -->
 
@@ -297,8 +284,6 @@
     </div>
   </div>
 
-  <script src="js/ensamblaje.js"></script>
-  <script src="js/modDid.js"></script>
-  <script src="js/diagnostico.js"></script>
+  <script src="./script.js"></script>
 </body>
 </html>
