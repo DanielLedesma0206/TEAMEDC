@@ -2002,28 +2002,327 @@ initBuild();
   /* =================================================================
      MÓDULO 6 · GLOSARIO (buscable)
      ================================================================= */
-  const GLOSSARY = [
-    
-  ];
-
-  function renderGlossary() {
-    const host = document.getElementById("modGloss");
-    host.innerHTML =
-      `<h2 class="mod-head">Biblioteca</h2>
-       <p class="mod-sub">Términos clave de arquitectura y ensamble. Usa el buscador para encontrar un concepto.</p>
-       <input id="glossSearch" class="gloss-search" type="text" placeholder="Buscar término… (ej. TDP, PCIe, dual channel)">
-       <div class="gloss-list" id="glossList"></div>`;
-    const list = host.querySelector("#glossList");
-    function paint(q) {
-      q = (q || "").toLowerCase().trim();
-      const items = GLOSSARY.filter(g => !q || g[0].toLowerCase().includes(q) || g[1].toLowerCase().includes(q));
-      list.innerHTML = items.length
-        ? items.map(g => `<div class="gloss-item"><span class="g-term">${g[0]}</span><span class="g-def">${g[1]}</span></div>`).join("")
-        : `<p class="small-text">Sin resultados para “${q}”.</p>`;
-    }
-    host.querySelector("#glossSearch").addEventListener("input", e => paint(e.target.value));
-    paint("");
+  const BIBLIOTECA_MODELOS = {
+  mobo: {
+    modelo: "modelos/placa-madre.glb",
+    categoria: "Placa madre"
+  },
+  cpu: {
+    modelo: "modelos/cpu.glb",
+    categoria: "Procesador"
+  },
+  cooler: {
+    modelo: "modelos/disipador.glb",
+    categoria: "Refrigeración"
+  },
+  aio: {
+    modelo: "modelos/aio.glb",
+    categoria: "Refrigeración"
+  },
+  ram1: {
+    modelo: "modelos/ram.glb",
+    categoria: "Memoria RAM"
+  },
+  ram2: {
+    modelo: "modelos/ram.glb",
+    categoria: "Memoria RAM"
+  },
+  m2: {
+    modelo: "modelos/m2.glb",
+    categoria: "Almacenamiento"
+  },
+  psu: {
+    modelo: "modelos/psu.glb",
+    categoria: "Energía"
+  },
+  ssd: {
+    modelo: "modelos/ssd.glb",
+    categoria: "Almacenamiento"
+  },
+  hdd: {
+    modelo: "modelos/hdd.glb",
+    categoria: "Almacenamiento"
+  },
+  gpu: {
+    modelo: "modelos/gpu.glb",
+    categoria: "Gráficos"
+  },
+  fan: {
+    modelo: "modelos/ventilador.glb",
+    categoria: "Refrigeración"
+  },
+  monitor: {
+    modelo: "modelos/monitor.glb",
+    categoria: "Periféricos"
+  },
+  keyboard: {
+    modelo: "modelos/teclado.glb",
+    categoria: "Periféricos"
+  },
+  mouse: {
+    modelo: "modelos/mouse.glb",
+    categoria: "Periféricos"
   }
+};
+
+
+function renderGlossary() {
+
+  const host = document.getElementById("modGloss");
+
+  const piezas = components.filter(c =>
+    BIBLIOTECA_MODELOS[c.id]
+  );
+
+  host.innerHTML = `
+    <div class="biblioteca-head">
+      <div>
+        <h2 class="mod-head">Biblioteca 3D</h2>
+        <p class="mod-sub">
+          Explora los componentes de una PC mediante modelos
+          tridimensionales interactivos.
+        </p>
+      </div>
+
+      <input
+        id="bibliotecaSearch"
+        class="biblioteca-search"
+        type="text"
+        placeholder="Buscar componente..."
+      >
+    </div>
+
+    <div class="biblioteca-filtros">
+      <button class="biblioteca-filter active" data-cat="Todos">
+        Todos
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Placa madre">
+        Placa madre
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Procesador">
+        Procesador
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Refrigeración">
+        Refrigeración
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Memoria RAM">
+        Memoria RAM
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Almacenamiento">
+        Almacenamiento
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Energía">
+        Energía
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Gráficos">
+        Gráficos
+      </button>
+
+      <button class="biblioteca-filter" data-cat="Periféricos">
+        Periféricos
+      </button>
+    </div>
+
+    <div id="bibliotecaViewer" class="biblioteca-viewer" hidden></div>
+
+    <div id="bibliotecaGrid" class="biblioteca-grid"></div>
+  `;
+
+  const grid = host.querySelector("#bibliotecaGrid");
+  const viewer = host.querySelector("#bibliotecaViewer");
+  const search = host.querySelector("#bibliotecaSearch");
+
+  let categoriaActual = "Todos";
+
+
+  function pintarBiblioteca() {
+
+    const texto = search.value.toLowerCase().trim();
+
+    const filtradas = piezas.filter(c => {
+
+      const modelo = BIBLIOTECA_MODELOS[c.id];
+
+      const coincideTexto =
+        !texto ||
+        c.name.toLowerCase().includes(texto) ||
+        c.short.toLowerCase().includes(texto);
+
+      const coincideCategoria =
+        categoriaActual === "Todos" ||
+        modelo.categoria === categoriaActual;
+
+      return coincideTexto && coincideCategoria;
+    });
+
+
+    grid.innerHTML = filtradas.length
+      ? filtradas.map(c => {
+
+          const modelo = BIBLIOTECA_MODELOS[c.id];
+
+          return `
+            <article class="biblioteca-card">
+
+              <div class="biblioteca-card-model">
+
+                <model-viewer
+                  src="${modelo.modelo}"
+                  camera-controls
+                  auto-rotate
+                  shadow-intensity="1"
+                  exposure="1"
+                  interaction-prompt="none"
+                  alt="${c.name}">
+                </model-viewer>
+
+              </div>
+
+              <div class="biblioteca-card-body">
+
+                <span class="biblioteca-category">
+                  ${modelo.categoria}
+                </span>
+
+                <h3>${c.name}</h3>
+
+                <p>${c.short}</p>
+
+                <button
+                  class="biblioteca-open"
+                  data-id="${c.id}">
+                  Ver modelo
+                </button>
+
+              </div>
+
+            </article>
+          `;
+
+        }).join("")
+      : `
+        <div class="biblioteca-empty">
+          <p>No se encontraron componentes.</p>
+        </div>
+      `;
+
+
+    grid.querySelectorAll(".biblioteca-open").forEach(btn => {
+
+      btn.addEventListener("click", () => {
+
+        const component = getComponent(btn.dataset.id);
+
+        abrirModeloBiblioteca(component);
+
+      });
+
+    });
+  }
+
+
+  function abrirModeloBiblioteca(component) {
+
+    const modelo = BIBLIOTECA_MODELOS[component.id];
+
+    viewer.hidden = false;
+
+    viewer.innerHTML = `
+
+      <div class="biblioteca-viewer-header">
+
+        <div>
+          <span class="biblioteca-category">
+            ${modelo.categoria}
+          </span>
+
+          <h3>${component.name}</h3>
+
+          <p>${component.info}</p>
+        </div>
+
+        <button
+          id="cerrarBibliotecaViewer"
+          class="biblioteca-close">
+          ✕
+        </button>
+
+      </div>
+
+
+      <div class="biblioteca-viewer-content">
+
+        <model-viewer
+          src="${modelo.modelo}"
+          camera-controls
+          auto-rotate
+          shadow-intensity="1"
+          exposure="1"
+          interaction-prompt="auto"
+          alt="${component.name}">
+        </model-viewer>
+
+        <div class="biblioteca-specs">
+
+          <h4>Ficha técnica</h4>
+
+          ${
+            SPECS[component.id]
+              ? tablaSpecs(SPECS[component.id])
+              : "<p>Sin especificaciones disponibles.</p>"
+          }
+
+        </div>
+
+      </div>
+    `;
+
+
+    viewer
+      .querySelector("#cerrarBibliotecaViewer")
+      .addEventListener("click", () => {
+
+        viewer.hidden = true;
+        viewer.innerHTML = "";
+
+      });
+
+  }
+
+
+  search.addEventListener("input", pintarBiblioteca);
+
+
+  host
+    .querySelectorAll(".biblioteca-filter")
+    .forEach(button => {
+
+      button.addEventListener("click", () => {
+
+        host
+          .querySelectorAll(".biblioteca-filter")
+          .forEach(b => b.classList.remove("active"));
+
+        button.classList.add("active");
+
+        categoriaActual = button.dataset.cat;
+
+        pintarBiblioteca();
+
+      });
+
+    });
+
+
+  pintarBiblioteca();
+}
 
   /* ---------------- Arranque de módulos ---------------- */
   setupModuleNav();
@@ -2050,7 +2349,7 @@ initBuild();
     { mod: "modDiag",     icon: "🩺", color: "#ff8c42", title: "Diagnóstico de errores", desc: "Enciende equipos con fallas, lee los síntomas del POST y repáralos." },
     { mod: "modCompat",   icon: "⚙️", color: "#ffb340", title: "Compatibilidad", desc: "Configura un equipo y comprueba si enciende, con el porqué de cada regla." },
     { mod: "modQuiz",     icon: "📝", color: "#ff5d6c", title: "Autoevaluación", desc: "Pon a prueba lo aprendido con un cuestionario que cambia cada intento." },
-    { mod: "modGloss",    icon: "📚", color: "#33c9ff", title: "Biblioteca", desc: "Consulta el glosario con los términos clave del hardware." }
+    { mod: "modGloss",    icon: "📚", color: "#33c9ff", title: "Biblioteca", desc: "Explora componentes de PC mediante modelos 3D interactivos." }
   ];
 
   function buildHome() {
