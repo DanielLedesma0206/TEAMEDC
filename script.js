@@ -2008,7 +2008,8 @@ initBuild();
     categoria: "Placa madre"
   },
   ram_ddr1:{
-    
+    modelo: "modelos/ram.glb",
+    categoria: "Memoria RAM DDR1"
   },
   cpu: {
     modelo: "modelos/cpu.glb",
@@ -2164,7 +2165,6 @@ function renderGlossary() {
 
       return coincideTexto && coincideCategoria;
     });
-
 
     grid.innerHTML = filtradas.length
       ? filtradas.map(c => {
