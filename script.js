@@ -2002,91 +2002,334 @@ initBuild();
   /* =================================================================
      MÓDULO 6 · Biblioteca
      ================================================================= */
+  
   const Biblioteca = {
-  mobo: {
-    modelo: "modelos/placa-madre.glb",
-    categoria: "Placa madre"
-  },
-  ram_ddr1:{
-    modelo: "modelos/ram.glb",
-    categoria: "Memoria RAM DDR1"
-  },
-  cpu: {
-    modelo: "modelos/cpu.glb",
-    categoria: "Procesador"
-  },
-  cooler: {
-    modelo: "modelos/disipador.glb",
-    categoria: "Refrigeración"
-  },
-  aio: {
-    modelo: "modelos/aio.glb",
-    categoria: "Refrigeración"
-  },
-  ram1: {
-    modelo: "modelos/ram.glb",
-    categoria: "Memoria RAM"
-  },
-  ram2: {
-    modelo: "modelos/ram.glb",
-    categoria: "Memoria RAM"
-  },
-  m2: {
-    modelo: "modelos/m2.glb",
-    categoria: "Almacenamiento"
-  },
-  psu: {
-    modelo: "modelos/psu.glb",
-    categoria: "Energía"
-  },
-  ssd: {
-    modelo: "modelos/ssd.glb",
-    categoria: "Almacenamiento"
-  },
-  hdd: {
-    modelo: "modelos/hdd.glb",
-    categoria: "Almacenamiento"
-  },
-  gpu: {
-    modelo: "modelos/gpu.glb",
-    categoria: "Gráficos"
-  },
-  fan: {
-    modelo: "modelos/ventilador.glb",
-    categoria: "Refrigeración"
-  },
-  monitor: {
-    modelo: "modelos/monitor.glb",
-    categoria: "Periféricos"
-  },
-  keyboard: {
-    modelo: "modelos/teclado.glb",
-    categoria: "Periféricos"
-  },
-  mouse: {
-    modelo: "modelos/mouse.glb",
-    categoria: "Periféricos"
-  }
-};
 
+    mobo: {
+      modelo: "modelos/placa-madre.glb",
+      categoria: "Placa madre"
+    },
+
+    ram_ddr1: {
+      tipo: "css",
+      archivo: "ram-ddr1",
+      categoria: "Memoria RAM DDR1",
+      nombre: "Memoria RAM DDR1",
+      descripcion: "Módulo DDR1 de 256 MB, 184 pines y estándar PC3200."
+    },
+
+    cpu: {
+      modelo: "modelos/cpu.glb",
+      categoria: "Procesador"
+    },
+
+    cooler: {
+      modelo: "modelos/disipador.glb",
+      categoria: "Refrigeración"
+    },
+
+    aio: {
+      modelo: "modelos/aio.glb",
+      categoria: "Refrigeración"
+    },
+
+    ram1: {
+      modelo: "modelos/ram.glb",
+      categoria: "Memoria RAM"
+    },
+
+    ram2: {
+      modelo: "modelos/ram.glb",
+      categoria: "Memoria RAM"
+    },
+
+    m2: {
+      modelo: "modelos/m2.glb",
+      categoria: "Almacenamiento"
+    },
+
+    psu: {
+      modelo: "modelos/psu.glb",
+      categoria: "Energía"
+    },
+
+    ssd: {
+      modelo: "modelos/ssd.glb",
+      categoria: "Almacenamiento"
+    },
+
+    hdd: {
+      modelo: "modelos/hdd.glb",
+      categoria: "Almacenamiento"
+    },
+
+    gpu: {
+      modelo: "modelos/gpu.glb",
+      categoria: "Gráficos"
+    },
+
+    fan: {
+      modelo: "modelos/ventilador.glb",
+      categoria: "Refrigeración"
+    },
+
+    monitor: {
+      modelo: "modelos/monitor.glb",
+      categoria: "Periféricos"
+    },
+
+    keyboard: {
+      modelo: "modelos/teclado.glb",
+      categoria: "Periféricos"
+    },
+
+    mouse: {
+      modelo: "modelos/mouse.glb",
+      categoria: "Periféricos"
+    }
+
+  };
+
+
+/* ================================================================
+   COMPONENTES CSS DE LA BIBLIOTECA
+   ================================================================ */
+
+const BIBLIOTECA_CSS_CARGADOS = new Set();
+
+
+async function cargarComponenteCSS(nombre) {
+
+  if (!BIBLIOTECA_CSS_CARGADOS.has(nombre)) {
+
+    const link = document.createElement("link");
+
+    link.rel = "stylesheet";
+
+    link.href = `./biblioteca/${nombre}.css`;
+
+    link.dataset.bibliotecaCss = nombre;
+
+    document.head.appendChild(link);
+
+    BIBLIOTECA_CSS_CARGADOS.add(nombre);
+  }
+
+
+  const respuesta = await fetch(
+    `./biblioteca/${nombre}.html`
+  );
+
+
+  if (!respuesta.ok) {
+
+    throw new Error(
+      `No se pudo cargar biblioteca/${nombre}.html`
+    );
+
+  }
+
+
+  return await respuesta.text();
+
+}
+
+function activarControlesCSS(contenedor) {
+
+  const viewport =
+    contenedor.querySelector(".flip-viewport");
+
+  const inner =
+    contenedor.querySelector(".flip-inner");
+
+  if (!viewport || !inner) {
+    return;
+  }
+
+  let rotacionY = 0;
+  let rotacionX = 0;
+  let escala = 1;
+
+  let arrastrando = false;
+  let inicioX = 0;
+  let inicioY = 0;
+
+  function actualizar() {
+
+    inner.style.transform =
+      `rotateX(${rotacionX}deg)
+       rotateY(${rotacionY}deg)
+       scale(${escala})`;
+  }
+
+  viewport.addEventListener(
+    "pointerdown",
+    (e) => {
+
+      arrastrando = true;
+
+      inicioX = e.clientX;
+      inicioY = e.clientY;
+
+      viewport.setPointerCapture(e.pointerId);
+
+      viewport.style.cursor = "grabbing";
+    }
+  );
+
+  viewport.addEventListener(
+    "pointermove",
+    (e) => {
+
+      if (!arrastrando) {
+        return;
+      }
+
+      const movimientoX =
+        e.clientX - inicioX;
+
+      const movimientoY =
+        e.clientY - inicioY;
+
+      rotacionY += movimientoX * 0.6;
+      rotacionX -= movimientoY * 0.4;
+
+      inicioX = e.clientX;
+      inicioY = e.clientY;
+
+      actualizar();
+    }
+  );
+
+  viewport.addEventListener(
+    "pointerup",
+    (e) => {
+
+      arrastrando = false;
+
+      viewport.releasePointerCapture(
+        e.pointerId
+      );
+
+      viewport.style.cursor = "grab";
+    }
+  );
+
+  viewport.addEventListener(
+    "pointercancel",
+    () => {
+
+      arrastrando = false;
+      viewport.style.cursor = "grab";
+
+    }
+  );
+
+  viewport.addEventListener(
+    "wheel",
+    (e) => {
+
+      e.preventDefault();
+
+      escala += e.deltaY < 0
+        ? 0.1
+        : -0.1;
+
+      escala = Math.max(
+        0.5,
+        Math.min(2, escala)
+      );
+
+      actualizar();
+
+    },
+    { passive: false }
+  );
+
+  viewport.style.cursor = "grab";
+  viewport.style.touchAction = "none";
+
+  actualizar();
+}
+
+
+/* ================================================================
+   OBTENER VISUAL DEL COMPONENTE
+   ================================================================ */
+
+async function obtenerVisualBiblioteca(component) {
+
+  const modelo = Biblioteca[component.id];
+
+  if (!modelo) {
+    throw new Error(
+      `No existe el componente ${component.id} en Biblioteca`
+    );
+  }
+
+  // Componente HTML + CSS
+  if (modelo.tipo === "css") {
+
+    return await cargarComponenteCSS(
+      modelo.archivo
+    );
+
+  }
+
+  // Componente 3D GLB
+  return `
+    <model-viewer
+      src="${modelo.modelo}"
+      camera-controls
+      auto-rotate
+      shadow-intensity="1"
+      exposure="1"
+      interaction-prompt="none"
+      alt="${component.name}">
+    </model-viewer>
+  `;
+}
+
+
+/* ================================================================
+   BIBLIOTECA
+   ================================================================ */
 
 function renderGlossary() {
 
-  const host = document.getElementById("modGloss");
+  const host =
+    document.getElementById("modGloss");
 
-  const piezas = components.filter(c =>
-    Biblioteca[c.id]
-  );
+
+  const piezas = Object.entries(Biblioteca).map(([id, modelo]) => {
+    const componente = getComponent(id);
+
+    return componente || {
+      id: id,
+      name: modelo.nombre || id,
+      short: modelo.descripcion || "Componente de la biblioteca.",
+      info: modelo.descripcion || "Sin descripción disponible."
+    };
+  });
+
 
   host.innerHTML = `
+
     <div class="biblioteca-head">
+
       <div>
-        <h2 class="mod-head">Biblioteca 3D</h2>
+
+        <h2 class="mod-head">
+          Biblioteca 3D
+        </h2>
+
         <p class="mod-sub">
-          Explora los componentes de una PC mediante modelos
-          tridimensionales interactivos.
+          Explora los componentes de una PC mediante
+          modelos tridimensionales interactivos.
         </p>
+
       </div>
+
 
       <input
         id="bibliotecaSearch"
@@ -2094,237 +2337,476 @@ function renderGlossary() {
         type="text"
         placeholder="Buscar componente..."
       >
+
     </div>
 
+
     <div class="biblioteca-filtros">
-      <button class="biblioteca-filter active" data-cat="Todos">
+
+      <button
+        class="biblioteca-filter active"
+        data-cat="Todos">
         Todos
       </button>
 
-      <button class="biblioteca-filter" data-cat="Placa madre">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Placa madre">
         Placa madre
       </button>
 
-      <button class="biblioteca-filter" data-cat="Procesador">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Procesador">
         Procesador
       </button>
 
-      <button class="biblioteca-filter" data-cat="Refrigeración">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Refrigeración">
         Refrigeración
       </button>
 
-      <button class="biblioteca-filter" data-cat="Memoria RAM">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Memoria RAM">
         Memoria RAM
       </button>
 
-      <button class="biblioteca-filter" data-cat="Almacenamiento">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Memoria RAM DDR1">
+        Memoria RAM DDR1
+      </button>
+
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Almacenamiento">
         Almacenamiento
       </button>
 
-      <button class="biblioteca-filter" data-cat="Energía">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Energía">
         Energía
       </button>
 
-      <button class="biblioteca-filter" data-cat="Gráficos">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Gráficos">
         Gráficos
       </button>
 
-      <button class="biblioteca-filter" data-cat="Periféricos">
+
+      <button
+        class="biblioteca-filter"
+        data-cat="Periféricos">
         Periféricos
       </button>
+
     </div>
 
-    <div id="bibliotecaViewer" class="biblioteca-viewer" hidden></div>
 
-    <div id="bibliotecaGrid" class="biblioteca-grid"></div>
+    <div
+      id="bibliotecaViewer"
+      class="biblioteca-viewer"
+      hidden>
+    </div>
+
+
+    <div
+      id="bibliotecaGrid"
+      class="biblioteca-grid">
+    </div>
+
   `;
 
-  const grid = host.querySelector("#bibliotecaGrid");
-  const viewer = host.querySelector("#bibliotecaViewer");
-  const search = host.querySelector("#bibliotecaSearch");
+
+  const grid =
+    host.querySelector(
+      "#bibliotecaGrid"
+    );
+
+
+  const viewer =
+    host.querySelector(
+      "#bibliotecaViewer"
+    );
+
+
+  const search =
+    host.querySelector(
+      "#bibliotecaSearch"
+    );
+
 
   let categoriaActual = "Todos";
 
 
-  function pintarBiblioteca() {
+  /* ================================================================
+     PINTAR TARJETAS
+     ================================================================ */
 
-    const texto = search.value.toLowerCase().trim();
+  async function pintarBiblioteca() {
 
-    const filtradas = piezas.filter(c => {
-
-      const modelo = Biblioteca[c.id];
-
-      const coincideTexto =
-        !texto ||
-        c.name.toLowerCase().includes(texto) ||
-        c.short.toLowerCase().includes(texto);
-
-      const coincideCategoria =
-        categoriaActual === "Todos" ||
-        modelo.categoria === categoriaActual;
-
-      return coincideTexto && coincideCategoria;
-    });
-
-    grid.innerHTML = filtradas.length
-      ? filtradas.map(c => {
-
-          const modelo = Biblioteca[c.id];
-
-          return `
-            <article class="biblioteca-card">
-
-              <div class="biblioteca-card-model">
-
-                <model-viewer
-                  src="${modelo.modelo}"
-                  camera-controls
-                  auto-rotate
-                  shadow-intensity="1"
-                  exposure="1"
-                  interaction-prompt="none"
-                  alt="${c.name}">
-                </model-viewer>
-
-              </div>
-
-              <div class="biblioteca-card-body">
-
-                <span class="biblioteca-category">
-                  ${modelo.categoria}
-                </span>
-
-                <h3>${c.name}</h3>
-
-                <p>${c.short}</p>
-
-                <button
-                  class="biblioteca-open"
-                  data-id="${c.id}">
-                  Ver modelo
-                </button>
-
-              </div>
-
-            </article>
-          `;
-
-        }).join("")
-      : `
-        <div class="biblioteca-empty">
-          <p>No se encontraron componentes.</p>
-        </div>
-      `;
+    const texto =
+      search.value
+        .toLowerCase()
+        .trim();
 
 
-    grid.querySelectorAll(".biblioteca-open").forEach(btn => {
+    const filtradas =
+      piezas.filter(c => {
 
-      btn.addEventListener("click", () => {
+        const modelo =
+          Biblioteca[c.id];
 
-        const component = getComponent(btn.dataset.id);
 
-        abrirModeloBiblioteca(component);
+        const coincideTexto =
+          !texto ||
+
+          c.name
+            .toLowerCase()
+            .includes(texto) ||
+
+          c.short
+            .toLowerCase()
+            .includes(texto);
+
+
+        const coincideCategoria =
+          categoriaActual === "Todos" ||
+
+          modelo.categoria ===
+            categoriaActual;
+
+
+        return (
+          coincideTexto &&
+          coincideCategoria
+        );
 
       });
 
-    });
-  }
+
+    grid.innerHTML = "";
 
 
-  function abrirModeloBiblioteca(component) {
+    if (!filtradas.length) {
 
-    const modelo = Biblioteca[component.id];
+      grid.innerHTML = `
 
-    viewer.hidden = false;
+        <div class="biblioteca-empty">
 
-    viewer.innerHTML = `
+          <p>
+            No se encontraron componentes.
+          </p>
 
-      <div class="biblioteca-viewer-header">
+        </div>
 
-        <div>
+      `;
+
+      return;
+
+    }
+
+
+    for (const c of filtradas) {
+
+      const modelo =
+        Biblioteca[c.id];
+
+
+      const card =
+        document.createElement(
+          "article"
+        );
+
+
+      card.className =
+        "biblioteca-card";
+
+
+      card.innerHTML = `
+
+        <div class="biblioteca-card-model">
+
+          <div class="biblioteca-loading">
+            Cargando...
+          </div>
+
+        </div>
+
+
+        <div class="biblioteca-card-body">
+
           <span class="biblioteca-category">
             ${modelo.categoria}
           </span>
 
-          <h3>${component.name}</h3>
 
-          <p>${component.info}</p>
+          <h3>
+            ${c.name}
+          </h3>
+
+
+          <p>
+            ${c.short}
+          </p>
+
+
+          <button
+            class="biblioteca-open"
+            data-id="${c.id}">
+            Ver modelo
+          </button>
+
         </div>
 
-        <button
-          id="cerrarBibliotecaViewer"
-          class="biblioteca-close">
-          ✕
-        </button>
-
-      </div>
+      `;
 
 
-      <div class="biblioteca-viewer-content">
+      grid.appendChild(card);
 
-        <model-viewer
-          src="${modelo.modelo}"
-          camera-controls
-          auto-rotate
-          shadow-intensity="1"
-          exposure="1"
-          interaction-prompt="auto"
-          alt="${component.name}">
-        </model-viewer>
 
-        <div class="biblioteca-specs">
+      try {
 
-          <h4>Ficha técnica</h4>
+        const visual =
+          await obtenerVisualBiblioteca(c);
 
-          ${
-            SPECS[component.id]
-              ? tablaSpecs(SPECS[component.id])
-              : "<p>Sin especificaciones disponibles.</p>"
+
+        card.querySelector(
+          ".biblioteca-card-model"
+        ).innerHTML = visual;
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        card.querySelector(
+          ".biblioteca-card-model"
+        ).innerHTML = `
+
+          <div class="biblioteca-empty">
+
+            <p>
+              No se pudo cargar el componente.
+            </p>
+
+          </div>
+
+        `;
+
+      }
+
+
+      card
+        .querySelector(
+          ".biblioteca-open"
+        )
+        .addEventListener(
+          "click",
+          () => {
+
+            abrirModeloBiblioteca(c);
+
           }
+        );
 
-        </div>
-
-      </div>
-    `;
-
-
-    viewer
-      .querySelector("#cerrarBibliotecaViewer")
-      .addEventListener("click", () => {
-
-        viewer.hidden = true;
-        viewer.innerHTML = "";
-
-      });
+    }
 
   }
 
 
-  search.addEventListener("input", pintarBiblioteca);
+  /* ================================================================
+     Visor grande
+     ================================================================ */
 
+async function abrirModeloBiblioteca(component) {
+
+  const modelo = Biblioteca[component.id];
+
+  if (!modelo) {
+    console.error("No existe en Biblioteca:", component.id);
+    return;
+  }
+
+  viewer.hidden = false;
+
+  viewer.innerHTML = `
+    <div class="biblioteca-viewer-header">
+      <div>
+        <span class="biblioteca-category">
+          ${modelo.categoria}
+        </span>
+
+        <h3>
+          ${component.name}
+        </h3>
+
+        <p>
+          ${component.info || component.short || modelo.descripcion || ""}
+        </p>
+      </div>
+
+      <button
+        id="cerrarBibliotecaViewer"
+        class="biblioteca-close">
+        ✕
+      </button>
+    </div>
+
+    <div class="biblioteca-viewer-content">
+
+      <div
+        id="bibliotecaVisualGrande"
+        class="biblioteca-visual-grande">
+
+        <div class="biblioteca-loading">
+          Cargando...
+        </div>
+
+      </div>
+
+      <div class="biblioteca-specs">
+
+        <h4>Ficha técnica</h4>
+
+        ${
+          SPECS[component.id]
+            ? tablaSpecs(SPECS[component.id])
+            : `
+              <p>
+                ${modelo.descripcion || "Sin especificaciones disponibles."}
+              </p>
+            `
+        }
+
+      </div>
+
+    </div>
+  `;
+
+  try {
+
+    const visual =
+      await obtenerVisualBiblioteca(component);
+
+    const contenedor =
+      viewer.querySelector(
+        "#bibliotecaVisualGrande"
+      );
+
+    if (!contenedor) {
+      throw new Error(
+        "No se encontró el contenedor del modelo."
+      );
+    }
+
+    contenedor.innerHTML = visual;
+
+  } catch (error) {
+
+    console.error(
+      "Error al abrir el modelo:",
+      error
+    );
+
+    viewer.querySelector(
+      "#bibliotecaVisualGrande"
+    ).innerHTML = `
+      <div class="biblioteca-empty">
+        <p>
+          No se pudo cargar el componente.
+        </p>
+      </div>
+    `;
+  }
+
+  viewer
+    .querySelector(
+      "#cerrarBibliotecaViewer"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        viewer.hidden = true;
+        viewer.innerHTML = "";
+
+      }
+    );
+}
+
+
+  /* ================================================================
+     BUSCADOR
+     ================================================================ */
+
+  search.addEventListener(
+    "input",
+    pintarBiblioteca
+  );
+
+
+  /* ================================================================
+     FILTROS
+     ================================================================ */
 
   host
-    .querySelectorAll(".biblioteca-filter")
+    .querySelectorAll(
+      ".biblioteca-filter"
+    )
     .forEach(button => {
 
-      button.addEventListener("click", () => {
+      button.addEventListener(
+        "click",
+        () => {
 
-        host
-          .querySelectorAll(".biblioteca-filter")
-          .forEach(b => b.classList.remove("active"));
+          host
+            .querySelectorAll(
+              ".biblioteca-filter"
+            )
+            .forEach(b =>
+              b.classList.remove(
+                "active"
+              )
+            );
 
-        button.classList.add("active");
 
-        categoriaActual = button.dataset.cat;
+          button.classList.add(
+            "active"
+          );
 
-        pintarBiblioteca();
 
-      });
+          categoriaActual =
+            button.dataset.cat;
+
+
+          pintarBiblioteca();
+
+        }
+      );
 
     });
 
 
+  /* ================================================================
+     INICIO
+     ================================================================ */
+
   pintarBiblioteca();
+
 }
 
   /* ---------------- Arranque de módulos ---------------- */
