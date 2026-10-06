@@ -2000,12 +2000,15 @@ initBuild();
   }
 
   /* =================================================================
-     MÓDULO 6 · GLOSARIO (buscable)
+     MÓDULO 6 · Biblioteca
      ================================================================= */
-  const BIBLIOTECA_MODELOS = {
+  const Biblioteca = {
   mobo: {
     modelo: "modelos/placa-madre.glb",
     categoria: "Placa madre"
+  },
+  ram_ddr1:{
+    
   },
   cpu: {
     modelo: "modelos/cpu.glb",
@@ -2071,7 +2074,7 @@ function renderGlossary() {
   const host = document.getElementById("modGloss");
 
   const piezas = components.filter(c =>
-    BIBLIOTECA_MODELOS[c.id]
+    Biblioteca[c.id]
   );
 
   host.innerHTML = `
@@ -2148,7 +2151,7 @@ function renderGlossary() {
 
     const filtradas = piezas.filter(c => {
 
-      const modelo = BIBLIOTECA_MODELOS[c.id];
+      const modelo = Biblioteca[c.id];
 
       const coincideTexto =
         !texto ||
@@ -2166,7 +2169,7 @@ function renderGlossary() {
     grid.innerHTML = filtradas.length
       ? filtradas.map(c => {
 
-          const modelo = BIBLIOTECA_MODELOS[c.id];
+          const modelo = Biblioteca[c.id];
 
           return `
             <article class="biblioteca-card">
@@ -2230,7 +2233,7 @@ function renderGlossary() {
 
   function abrirModeloBiblioteca(component) {
 
-    const modelo = BIBLIOTECA_MODELOS[component.id];
+    const modelo = Biblioteca[component.id];
 
     viewer.hidden = false;
 
