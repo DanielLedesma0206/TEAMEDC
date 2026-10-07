@@ -2099,52 +2099,38 @@ const BIBLIOTECA_CSS_CARGADOS = new Set();
 
 
 async function cargarComponenteCSS(nombre) {
-
   if (!BIBLIOTECA_CSS_CARGADOS.has(nombre)) {
-
     const link = document.createElement("link");
 
     link.rel = "stylesheet";
-
     link.href = `./biblioteca/${nombre}.css`;
-
     link.dataset.bibliotecaCss = nombre;
 
     document.head.appendChild(link);
 
+    await new Promise((resolve, reject) => {
+      link.onload = resolve;
+      link.onerror = () =>
+        reject(new Error(`No se pudo cargar biblioteca/${nombre}.css`));
+    });
+
     BIBLIOTECA_CSS_CARGADOS.add(nombre);
   }
 
-
-  const respuesta = await fetch(
-    `./biblioteca/${nombre}.html`
-  );
-
+  const respuesta = await fetch(`./biblioteca/${nombre}.html`);
 
   if (!respuesta.ok) {
-
-    throw new Error(
-      `No se pudo cargar biblioteca/${nombre}.html`
-    );
-
+    throw new Error(`No se pudo cargar biblioteca/${nombre}.html`);
   }
 
-
   return await respuesta.text();
-
 }
 
 function activarControlesCSS(contenedor) {
+  const viewport = contenedor.querySelector(".flip-viewport");
+  const inner = contenedor.querySelector(".flip-inner");
 
-  const viewport =
-    contenedor.querySelector(".flip-viewport");
-
-  const inner =
-    contenedor.querySelector(".flip-inner");
-
-  if (!viewport || !inner) {
-    return;
-  }
+  if (!viewport || !inner) return;
 
   let rotacionY = 0;
   let rotacionX = 0;
@@ -2154,94 +2140,72 @@ function activarControlesCSS(contenedor) {
   let inicioX = 0;
   let inicioY = 0;
 
-  function actualizar() {
+  inner.style.animation = "none";
 
+  function actualizar() {
     inner.style.transform =
-      `rotateX(${rotacionX}deg)
-       rotateY(${rotacionY}deg)
-       scale(${escala})`;
+      `rotateX(${rotacionX}deg) ` +
+      `rotateY(${rotacionY}deg) ` +
+      `scale(${escala})`;
   }
 
-  viewport.addEventListener(
-    "pointerdown",
-    (e) => {
+  viewport.addEventListener("pointerdown", (e) => {
+    arrastrando = true;
 
-      arrastrando = true;
+    inicioX = e.clientX;
+    inicioY = e.clientY;
 
-      inicioX = e.clientX;
-      inicioY = e.clientY;
+    viewport.setPointerCapture(e.pointerId);
+    viewport.style.cursor = "grabbing";
+  });
 
-      viewport.setPointerCapture(e.pointerId);
+  viewport.addEventListener("pointermove", (e) => {
+    if (!arrastrando) return;
 
-      viewport.style.cursor = "grabbing";
-    }
-  );
+    const movimientoX = e.clientX - inicioX;
+    const movimientoY = e.clientY - inicioY;
 
-  viewport.addEventListener(
-    "pointermove",
-    (e) => {
+    rotacionY += movimientoX * 0.5;
+    rotacionX -= movimientoY * 0.5;
 
-      if (!arrastrando) {
-        return;
-      }
+    inicioX = e.clientX;
+    inicioY = e.clientY;
 
-      const movimientoX =
-        e.clientX - inicioX;
+    actualizar();
+  });
 
-      const movimientoY =
-        e.clientY - inicioY;
+  function terminarArrastre(e) {
+    arrastrando = false;
+    viewport.style.cursor = "grab";
 
-      rotacionY += movimientoX * 0.6;
-      rotacionX -= movimientoY * 0.4;
+    try {
+      viewport.releasePointerCapture(e.pointerId);
+    } catch {}
+  }
 
-      inicioX = e.clientX;
-      inicioY = e.clientY;
-
-      actualizar();
-    }
-  );
-
-  viewport.addEventListener(
-    "pointerup",
-    (e) => {
-
-      arrastrando = false;
-
-      viewport.releasePointerCapture(
-        e.pointerId
-      );
-
-      viewport.style.cursor = "grab";
-    }
-  );
-
-  viewport.addEventListener(
-    "pointercancel",
-    () => {
-
+  viewport.addEventListener("pointerup", terminarArrastre);
+  viewport.addEventListener("pointercancel", terminarArrastre);
+  viewport.addEventListener("pointerleave", () => {
+    if (arrastrando) {
       arrastrando = false;
       viewport.style.cursor = "grab";
-
     }
-  );
+  });
 
   viewport.addEventListener(
     "wheel",
     (e) => {
-
       e.preventDefault();
 
-      escala += e.deltaY < 0
-        ? 0.1
-        : -0.1;
+      if (e.deltaY < 0) {
+        escala += 0.1;
+      } else {
+        escala -= 0.1;
+      }
 
-      escala = Math.max(
-        0.5,
-        Math.min(2, escala)
-      );
+      escala = Math.max(0.5, Math.min(2, escala));
 
       actualizar();
-
     },
     { passive: false }
   );
@@ -2258,7 +2222,6 @@ function activarControlesCSS(contenedor) {
    ================================================================ */
 
 async function obtenerVisualBiblioteca(component) {
-
   const modelo = Biblioteca[component.id];
 
   if (!modelo) {
@@ -2267,16 +2230,16 @@ async function obtenerVisualBiblioteca(component) {
     );
   }
 
-  // Componente HTML + CSS
   if (modelo.tipo === "css") {
-
-    return await cargarComponenteCSS(
-      modelo.archivo
-    );
-
+    return await cargarComponenteCSS(modelo.archivo);
   }
 
-  // Componente 3D GLB
+  if (!modelo.modelo) {
+    throw new Error(
+      `El componente ${component.id} no tiene un modelo definido`
+    );
+  }
+
   return `
     <model-viewer
       src="${modelo.modelo}"
@@ -2632,8 +2595,7 @@ function renderGlossary() {
      Visor grande
      ================================================================ */
 
-async function abrirModeloBiblioteca(component) {
-
+  async function abrirModeloBiblioteca(component) {
   const modelo = Biblioteca[component.id];
 
   if (!modelo) {
@@ -2644,68 +2606,31 @@ async function abrirModeloBiblioteca(component) {
   viewer.hidden = false;
 
   viewer.innerHTML = `
-    <div class="biblioteca-viewer-header">
-      <div>
-        <span class="biblioteca-category">
-          ${modelo.categoria}
-        </span>
-
-        <h3>
-          ${component.name}
-        </h3>
-
-        <p>
-          ${component.info || component.short || modelo.descripcion || ""}
-        </p>
-      </div>
-
+    <div class="biblioteca-viewer">
       <button
+        type="button"
         id="cerrarBibliotecaViewer"
         class="biblioteca-close">
-        ✕
+        ×
       </button>
-    </div>
-
-    <div class="biblioteca-viewer-content">
 
       <div
         id="bibliotecaVisualGrande"
         class="biblioteca-visual-grande">
-
-        <div class="biblioteca-loading">
-          Cargando...
-        </div>
-
       </div>
 
-      <div class="biblioteca-specs">
-
-        <h4>Ficha técnica</h4>
-
-        ${
-          SPECS[component.id]
-            ? tablaSpecs(SPECS[component.id])
-            : `
-              <p>
-                ${modelo.descripcion || "Sin especificaciones disponibles."}
-              </p>
-            `
-        }
-
+      <div class="biblioteca-viewer-info">
+        <h2>${component.name}</h2>
+        <p>${component.short || ""}</p>
       </div>
-
     </div>
   `;
 
   try {
-
-    const visual =
-      await obtenerVisualBiblioteca(component);
+    const visual = await obtenerVisualBiblioteca(component);
 
     const contenedor =
-      viewer.querySelector(
-        "#bibliotecaVisualGrande"
-      );
+      viewer.querySelector("#bibliotecaVisualGrande");
 
     if (!contenedor) {
       throw new Error(
@@ -2715,37 +2640,37 @@ async function abrirModeloBiblioteca(component) {
 
     contenedor.innerHTML = visual;
 
+    if (modelo.tipo === "css") {
+      activarControlesCSS(contenedor);
+    }
   } catch (error) {
-
     console.error(
       "Error al abrir el modelo:",
       error
     );
 
-    viewer.querySelector(
-      "#bibliotecaVisualGrande"
-    ).innerHTML = `
-      <div class="biblioteca-empty">
-        <p>
-          No se pudo cargar el componente.
-        </p>
-      </div>
-    `;
+    const contenedor =
+      viewer.querySelector("#bibliotecaVisualGrande");
+
+    if (contenedor) {
+      contenedor.innerHTML = `
+        <div class="biblioteca-empty">
+          <p>No se pudo cargar el componente.</p>
+          <small>${error.message}</small>
+        </div>
+      `;
+    }
   }
 
-  viewer
-    .querySelector(
-      "#cerrarBibliotecaViewer"
-    )
-    .addEventListener(
-      "click",
-      () => {
+  const botonCerrar =
+    viewer.querySelector("#cerrarBibliotecaViewer");
 
-        viewer.hidden = true;
-        viewer.innerHTML = "";
-
-      }
-    );
+  if (botonCerrar) {
+    botonCerrar.addEventListener("click", () => {
+      viewer.hidden = true;
+      viewer.innerHTML = "";
+    });
+  }
 }
 
 
@@ -2879,7 +2804,7 @@ async function abrirModeloBiblioteca(component) {
         b.addEventListener("click", goHome);
         nav.prepend(b);
       }
-      // Deja SOLO el botón de Inicio visible en la barra de arriba
+      // Deja solo el botón de Inicio visible en la barra de arriba
       nav.querySelectorAll(".modnav-btn").forEach(b => { if (b.id !== "pbHomeBtn") b.style.display = "none"; });
     }
 

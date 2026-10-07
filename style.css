@@ -1586,8 +1586,12 @@ body.pb-home-active #homeRoot {
   overflow: hidden;
 }
 
-.biblioteca-ram-ddr1 .flip-viewport {
-  transform: scale(.48);
-  transform-origin: center;
-  flex-shrink: 0;
+.biblioteca-card .flip-viewport {
+  width: 560px;
+  height: 132px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%) scale(0.45);
+  transform-origin: center center;
+  margin: 0;
 }
