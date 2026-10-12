@@ -2018,6 +2018,14 @@ initBuild();
       descripcion: "Módulo DDR1 de 256 MB, 184 pines y estándar PC3200."
     },
 
+    ram_ddr4: {
+    tipo: "css",
+    archivo: "ram-ddr4",
+    categoria: "Memoria RAM DDR4",
+    nombre: "Memoria RAM DDR4",
+    descripcion: "Módulo DDR4 DIMM de 8 GB, 288 pines y estándar PC4-25600."
+    },
+
     cpu: {
       modelo: "modelos/cpu.glb",
       categoria: "Procesador"
