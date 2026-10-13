@@ -10,6 +10,7 @@ Y DICE JAITRON SI EL TOMATE EL FRUTA, LA CAPSU EL UN LICUADO?
 # Hoy LEDESMA 10/09/2026 no llego  
 # Jaichete llego bien tarde 14/09/2026 
 # 23/09/2026 Jaichetes y Ledesdetonadito no llegaron -40 hours of service
+# Ledeschetes solo llega a ver reels y mamarse el papel del baño
 ---
 # Quitar el cuadro que gira de colores ✅
 # Arreglar ventilador abajo de procesador
